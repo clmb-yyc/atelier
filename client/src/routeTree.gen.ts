@@ -13,7 +13,6 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedadministrationLocationsRouteImport } from './routes/_authenticated/(administration)/locations'
 import { Route as AuthenticatedadministrationSettingsRouteImport } from './routes/_authenticated/(administration)/settings'
 import { Route as AuthenticatedadministrationStaffPermissionsRouteImport } from './routes/_authenticated/(administration)/staff-permissions'
-import { Route as AuthenticatedclimbingOperationsClimbsRouteImport } from './routes/_authenticated/(climbing-operations)/climbs'
 import { Route as AuthenticatedclimbingOperationsMaintenanceRouteImport } from './routes/_authenticated/(climbing-operations)/maintenance'
 import { Route as AuthenticatedclimbingOperationsRouteSettingRouteImport } from './routes/_authenticated/(climbing-operations)/route-setting'
 import { Route as AuthenticatedclimbingOperationsRoutesRouteImport } from './routes/_authenticated/(climbing-operations)/routes'
@@ -24,7 +23,6 @@ import { Route as AuthenticatedfrontDeskPointOfSaleRouteImport } from './routes/
 import { Route as AuthenticatedfrontDeskTransactionsRouteImport } from './routes/_authenticated/(front-desk)/transactions'
 import { Route as AuthenticatedoverviewIndexRouteImport } from './routes/_authenticated/(overview)/index'
 import { Route as AuthenticatedoverviewAnalyticsRouteImport } from './routes/_authenticated/(overview)/analytics'
-import { Route as AuthenticatedsalesAccessMembersRouteImport } from './routes/_authenticated/(sales-access)/members'
 import { Route as AuthenticatedsalesAccessMembershipsRouteImport } from './routes/_authenticated/(sales-access)/memberships'
 import { Route as AuthenticatedsalesAccessPassesTicketsRouteImport } from './routes/_authenticated/(sales-access)/passes-tickets'
 import { Route as AuthenticatedsalesAccessProductsInventoryRouteImport } from './routes/_authenticated/(sales-access)/products-inventory'
@@ -53,12 +51,6 @@ const AuthenticatedadministrationStaffPermissionsRoute =
   AuthenticatedadministrationStaffPermissionsRouteImport.update({
     id: '/(administration)/staff-permissions',
     path: '/staff-permissions',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedclimbingOperationsClimbsRoute =
-  AuthenticatedclimbingOperationsClimbsRouteImport.update({
-    id: '/(climbing-operations)/climbs',
-    path: '/climbs',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedclimbingOperationsMaintenanceRoute =
@@ -121,12 +113,6 @@ const AuthenticatedoverviewAnalyticsRoute =
     path: '/analytics',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedsalesAccessMembersRoute =
-  AuthenticatedsalesAccessMembersRouteImport.update({
-    id: '/(sales-access)/members',
-    path: '/members',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedsalesAccessMembershipsRoute =
   AuthenticatedsalesAccessMembershipsRouteImport.update({
     id: '/(sales-access)/memberships',
@@ -175,7 +161,6 @@ export interface FileRoutesByFullPath {
   '/locations': typeof AuthenticatedadministrationLocationsRoute
   '/settings': typeof AuthenticatedadministrationSettingsRoute
   '/staff-permissions': typeof AuthenticatedadministrationStaffPermissionsRoute
-  '/climbs': typeof AuthenticatedclimbingOperationsClimbsRoute
   '/maintenance': typeof AuthenticatedclimbingOperationsMaintenanceRoute
   '/route-setting': typeof AuthenticatedclimbingOperationsRouteSettingRoute
   '/routes': typeof AuthenticatedclimbingOperationsRoutesRoute
@@ -185,7 +170,6 @@ export interface FileRoutesByFullPath {
   '/point-of-sale': typeof AuthenticatedfrontDeskPointOfSaleRoute
   '/transactions': typeof AuthenticatedfrontDeskTransactionsRoute
   '/analytics': typeof AuthenticatedoverviewAnalyticsRoute
-  '/members': typeof AuthenticatedsalesAccessMembersRoute
   '/memberships': typeof AuthenticatedsalesAccessMembershipsRoute
   '/passes-tickets': typeof AuthenticatedsalesAccessPassesTicketsRoute
   '/products-inventory': typeof AuthenticatedsalesAccessProductsInventoryRoute
@@ -198,7 +182,6 @@ export interface FileRoutesByTo {
   '/locations': typeof AuthenticatedadministrationLocationsRoute
   '/settings': typeof AuthenticatedadministrationSettingsRoute
   '/staff-permissions': typeof AuthenticatedadministrationStaffPermissionsRoute
-  '/climbs': typeof AuthenticatedclimbingOperationsClimbsRoute
   '/maintenance': typeof AuthenticatedclimbingOperationsMaintenanceRoute
   '/route-setting': typeof AuthenticatedclimbingOperationsRouteSettingRoute
   '/routes': typeof AuthenticatedclimbingOperationsRoutesRoute
@@ -208,7 +191,6 @@ export interface FileRoutesByTo {
   '/point-of-sale': typeof AuthenticatedfrontDeskPointOfSaleRoute
   '/transactions': typeof AuthenticatedfrontDeskTransactionsRoute
   '/analytics': typeof AuthenticatedoverviewAnalyticsRoute
-  '/members': typeof AuthenticatedsalesAccessMembersRoute
   '/memberships': typeof AuthenticatedsalesAccessMembershipsRoute
   '/passes-tickets': typeof AuthenticatedsalesAccessPassesTicketsRoute
   '/products-inventory': typeof AuthenticatedsalesAccessProductsInventoryRoute
@@ -224,7 +206,6 @@ export interface FileRoutesById {
   '/_authenticated/(administration)/locations': typeof AuthenticatedadministrationLocationsRoute
   '/_authenticated/(administration)/settings': typeof AuthenticatedadministrationSettingsRoute
   '/_authenticated/(administration)/staff-permissions': typeof AuthenticatedadministrationStaffPermissionsRoute
-  '/_authenticated/(climbing-operations)/climbs': typeof AuthenticatedclimbingOperationsClimbsRoute
   '/_authenticated/(climbing-operations)/maintenance': typeof AuthenticatedclimbingOperationsMaintenanceRoute
   '/_authenticated/(climbing-operations)/route-setting': typeof AuthenticatedclimbingOperationsRouteSettingRoute
   '/_authenticated/(climbing-operations)/routes': typeof AuthenticatedclimbingOperationsRoutesRoute
@@ -234,7 +215,6 @@ export interface FileRoutesById {
   '/_authenticated/(front-desk)/point-of-sale': typeof AuthenticatedfrontDeskPointOfSaleRoute
   '/_authenticated/(front-desk)/transactions': typeof AuthenticatedfrontDeskTransactionsRoute
   '/_authenticated/(overview)/analytics': typeof AuthenticatedoverviewAnalyticsRoute
-  '/_authenticated/(sales-access)/members': typeof AuthenticatedsalesAccessMembersRoute
   '/_authenticated/(sales-access)/memberships': typeof AuthenticatedsalesAccessMembershipsRoute
   '/_authenticated/(sales-access)/passes-tickets': typeof AuthenticatedsalesAccessPassesTicketsRoute
   '/_authenticated/(sales-access)/products-inventory': typeof AuthenticatedsalesAccessProductsInventoryRoute
@@ -251,7 +231,6 @@ export interface FileRouteTypes {
     | '/locations'
     | '/settings'
     | '/staff-permissions'
-    | '/climbs'
     | '/maintenance'
     | '/route-setting'
     | '/routes'
@@ -261,7 +240,6 @@ export interface FileRouteTypes {
     | '/point-of-sale'
     | '/transactions'
     | '/analytics'
-    | '/members'
     | '/memberships'
     | '/passes-tickets'
     | '/products-inventory'
@@ -274,7 +252,6 @@ export interface FileRouteTypes {
     | '/locations'
     | '/settings'
     | '/staff-permissions'
-    | '/climbs'
     | '/maintenance'
     | '/route-setting'
     | '/routes'
@@ -284,7 +261,6 @@ export interface FileRouteTypes {
     | '/point-of-sale'
     | '/transactions'
     | '/analytics'
-    | '/members'
     | '/memberships'
     | '/passes-tickets'
     | '/products-inventory'
@@ -299,7 +275,6 @@ export interface FileRouteTypes {
     | '/_authenticated/(administration)/locations'
     | '/_authenticated/(administration)/settings'
     | '/_authenticated/(administration)/staff-permissions'
-    | '/_authenticated/(climbing-operations)/climbs'
     | '/_authenticated/(climbing-operations)/maintenance'
     | '/_authenticated/(climbing-operations)/route-setting'
     | '/_authenticated/(climbing-operations)/routes'
@@ -309,7 +284,6 @@ export interface FileRouteTypes {
     | '/_authenticated/(front-desk)/point-of-sale'
     | '/_authenticated/(front-desk)/transactions'
     | '/_authenticated/(overview)/analytics'
-    | '/_authenticated/(sales-access)/members'
     | '/_authenticated/(sales-access)/memberships'
     | '/_authenticated/(sales-access)/passes-tickets'
     | '/_authenticated/(sales-access)/products-inventory'
@@ -352,13 +326,6 @@ declare module '@tanstack/react-router' {
       path: '/staff-permissions'
       fullPath: '/staff-permissions'
       preLoaderRoute: typeof AuthenticatedadministrationStaffPermissionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/(climbing-operations)/climbs': {
-      id: '/_authenticated/(climbing-operations)/climbs'
-      path: '/climbs'
-      fullPath: '/climbs'
-      preLoaderRoute: typeof AuthenticatedclimbingOperationsClimbsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/(climbing-operations)/maintenance': {
@@ -431,13 +398,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedoverviewAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/(sales-access)/members': {
-      id: '/_authenticated/(sales-access)/members'
-      path: '/members'
-      fullPath: '/members'
-      preLoaderRoute: typeof AuthenticatedsalesAccessMembersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/(sales-access)/memberships': {
       id: '/_authenticated/(sales-access)/memberships'
       path: '/memberships'
@@ -494,7 +454,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedadministrationLocationsRoute: typeof AuthenticatedadministrationLocationsRoute
   AuthenticatedadministrationSettingsRoute: typeof AuthenticatedadministrationSettingsRoute
   AuthenticatedadministrationStaffPermissionsRoute: typeof AuthenticatedadministrationStaffPermissionsRoute
-  AuthenticatedclimbingOperationsClimbsRoute: typeof AuthenticatedclimbingOperationsClimbsRoute
   AuthenticatedclimbingOperationsMaintenanceRoute: typeof AuthenticatedclimbingOperationsMaintenanceRoute
   AuthenticatedclimbingOperationsRouteSettingRoute: typeof AuthenticatedclimbingOperationsRouteSettingRoute
   AuthenticatedclimbingOperationsRoutesRoute: typeof AuthenticatedclimbingOperationsRoutesRoute
@@ -504,7 +463,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedfrontDeskPointOfSaleRoute: typeof AuthenticatedfrontDeskPointOfSaleRoute
   AuthenticatedfrontDeskTransactionsRoute: typeof AuthenticatedfrontDeskTransactionsRoute
   AuthenticatedoverviewAnalyticsRoute: typeof AuthenticatedoverviewAnalyticsRoute
-  AuthenticatedsalesAccessMembersRoute: typeof AuthenticatedsalesAccessMembersRoute
   AuthenticatedsalesAccessMembershipsRoute: typeof AuthenticatedsalesAccessMembershipsRoute
   AuthenticatedsalesAccessPassesTicketsRoute: typeof AuthenticatedsalesAccessPassesTicketsRoute
   AuthenticatedsalesAccessProductsInventoryRoute: typeof AuthenticatedsalesAccessProductsInventoryRoute
@@ -522,8 +480,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedadministrationSettingsRoute,
   AuthenticatedadministrationStaffPermissionsRoute:
     AuthenticatedadministrationStaffPermissionsRoute,
-  AuthenticatedclimbingOperationsClimbsRoute:
-    AuthenticatedclimbingOperationsClimbsRoute,
   AuthenticatedclimbingOperationsMaintenanceRoute:
     AuthenticatedclimbingOperationsMaintenanceRoute,
   AuthenticatedclimbingOperationsRouteSettingRoute:
@@ -540,7 +496,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedfrontDeskTransactionsRoute:
     AuthenticatedfrontDeskTransactionsRoute,
   AuthenticatedoverviewAnalyticsRoute: AuthenticatedoverviewAnalyticsRoute,
-  AuthenticatedsalesAccessMembersRoute: AuthenticatedsalesAccessMembersRoute,
   AuthenticatedsalesAccessMembershipsRoute:
     AuthenticatedsalesAccessMembershipsRoute,
   AuthenticatedsalesAccessPassesTicketsRoute:
