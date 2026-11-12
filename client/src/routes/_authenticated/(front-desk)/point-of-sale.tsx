@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/point-of-sale')({ component: PointOfSale })
+export const Route = createFileRoute('/_authenticated/(front-desk)/point-of-sale')({ component: PointOfSale })
 
 function PointOfSale() {
   return (

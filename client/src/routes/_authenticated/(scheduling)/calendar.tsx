@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/calendar')({ component: Calendar })
+export const Route = createFileRoute('/_authenticated/(scheduling)/calendar')({ component: Calendar })
 
 function Calendar() {
   return (

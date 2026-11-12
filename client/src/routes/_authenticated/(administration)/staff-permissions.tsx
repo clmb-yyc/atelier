@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/staff-permissions')({ component: StaffPermissions })
+export const Route = createFileRoute('/_authenticated/(administration)/staff-permissions')({ component: StaffPermissions })
 
 function StaffPermissions() {
   return (

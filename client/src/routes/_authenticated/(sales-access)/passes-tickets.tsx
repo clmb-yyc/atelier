@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/passes-tickets')({ component: PassesTickets })
+export const Route = createFileRoute('/_authenticated/(sales-access)/passes-tickets')({ component: PassesTickets })
 
 function PassesTickets() {
   return (

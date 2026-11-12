@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/waivers-agreements')({ component: WaiversAgreements })
+export const Route = createFileRoute('/_authenticated/(sales-access)/waivers-agreements')({ component: WaiversAgreements })
 
 function WaiversAgreements() {
   return (

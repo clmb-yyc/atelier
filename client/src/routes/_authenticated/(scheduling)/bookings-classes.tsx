@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/bookings-classes')({ component: BookingsClasses })
+export const Route = createFileRoute('/_authenticated/(scheduling)/bookings-classes')({ component: BookingsClasses })
 
 function BookingsClasses() {
   return (

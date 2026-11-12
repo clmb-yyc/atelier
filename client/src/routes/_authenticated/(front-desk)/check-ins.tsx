@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/check-ins')({ component: CheckIns })
+export const Route = createFileRoute('/_authenticated/(front-desk)/check-ins')({ component: CheckIns })
 
 function CheckIns() {
   return (

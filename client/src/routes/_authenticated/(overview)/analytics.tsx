@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/analytics')({ component: Analytics })
+export const Route = createFileRoute('/_authenticated/(overview)/analytics')({ component: Analytics })
 
 function Analytics() {
   return (

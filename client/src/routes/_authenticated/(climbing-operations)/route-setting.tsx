@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/route-setting')({ component: RouteSetting })
+export const Route = createFileRoute('/_authenticated/(climbing-operations)/route-setting')({ component: RouteSetting })
 
 function RouteSetting() {
   return (
