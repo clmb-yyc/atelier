@@ -11,8 +11,26 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as BookingsClassesRouteImport } from './routes/bookings-classes'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as CheckInsRouteImport } from './routes/check-ins'
 import { Route as ClimbsRouteImport } from './routes/climbs'
+import { Route as CustomersCrmRouteImport } from './routes/customers-crm'
+import { Route as EventsCompetitionsRouteImport } from './routes/events-competitions'
+import { Route as LocationsRouteImport } from './routes/locations'
+import { Route as MaintenanceRouteImport } from './routes/maintenance'
 import { Route as MembersRouteImport } from './routes/members'
+import { Route as MembershipsRouteImport } from './routes/memberships'
+import { Route as PassesTicketsRouteImport } from './routes/passes-tickets'
+import { Route as PointOfSaleRouteImport } from './routes/point-of-sale'
+import { Route as ProductsInventoryRouteImport } from './routes/products-inventory'
+import { Route as RouteSettingRouteImport } from './routes/route-setting'
+import { Route as RoutesRouteImport } from './routes/routes'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as StaffPermissionsRouteImport } from './routes/staff-permissions'
+import { Route as TransactionsRouteImport } from './routes/transactions'
+import { Route as WaiversAgreementsRouteImport } from './routes/waivers-agreements'
+import { Route as WallsZonesRouteImport } from './routes/walls-zones'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,9 +42,44 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookingsClassesRoute = BookingsClassesRouteImport.update({
+  id: '/bookings-classes',
+  path: '/bookings-classes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckInsRoute = CheckInsRouteImport.update({
+  id: '/check-ins',
+  path: '/check-ins',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClimbsRoute = ClimbsRouteImport.update({
   id: '/climbs',
   path: '/climbs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersCrmRoute = CustomersCrmRouteImport.update({
+  id: '/customers-crm',
+  path: '/customers-crm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsCompetitionsRoute = EventsCompetitionsRouteImport.update({
+  id: '/events-competitions',
+  path: '/events-competitions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocationsRoute = LocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaintenanceRoute = MaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembersRoute = MembersRouteImport.update({
@@ -34,39 +87,233 @@ const MembersRoute = MembersRouteImport.update({
   path: '/members',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MembershipsRoute = MembershipsRouteImport.update({
+  id: '/memberships',
+  path: '/memberships',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PassesTicketsRoute = PassesTicketsRouteImport.update({
+  id: '/passes-tickets',
+  path: '/passes-tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PointOfSaleRoute = PointOfSaleRouteImport.update({
+  id: '/point-of-sale',
+  path: '/point-of-sale',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsInventoryRoute = ProductsInventoryRouteImport.update({
+  id: '/products-inventory',
+  path: '/products-inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RouteSettingRoute = RouteSettingRouteImport.update({
+  id: '/route-setting',
+  path: '/route-setting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoutesRoute = RoutesRouteImport.update({
+  id: '/routes',
+  path: '/routes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaffPermissionsRoute = StaffPermissionsRouteImport.update({
+  id: '/staff-permissions',
+  path: '/staff-permissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransactionsRoute = TransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaiversAgreementsRoute = WaiversAgreementsRouteImport.update({
+  id: '/waivers-agreements',
+  path: '/waivers-agreements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WallsZonesRoute = WallsZonesRouteImport.update({
+  id: '/walls-zones',
+  path: '/walls-zones',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
+  '/bookings-classes': typeof BookingsClassesRoute
+  '/calendar': typeof CalendarRoute
+  '/check-ins': typeof CheckInsRoute
   '/climbs': typeof ClimbsRoute
+  '/customers-crm': typeof CustomersCrmRoute
+  '/events-competitions': typeof EventsCompetitionsRoute
+  '/locations': typeof LocationsRoute
+  '/maintenance': typeof MaintenanceRoute
   '/members': typeof MembersRoute
+  '/memberships': typeof MembershipsRoute
+  '/passes-tickets': typeof PassesTicketsRoute
+  '/point-of-sale': typeof PointOfSaleRoute
+  '/products-inventory': typeof ProductsInventoryRoute
+  '/route-setting': typeof RouteSettingRoute
+  '/routes': typeof RoutesRoute
+  '/settings': typeof SettingsRoute
+  '/staff-permissions': typeof StaffPermissionsRoute
+  '/transactions': typeof TransactionsRoute
+  '/waivers-agreements': typeof WaiversAgreementsRoute
+  '/walls-zones': typeof WallsZonesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
+  '/bookings-classes': typeof BookingsClassesRoute
+  '/calendar': typeof CalendarRoute
+  '/check-ins': typeof CheckInsRoute
   '/climbs': typeof ClimbsRoute
+  '/customers-crm': typeof CustomersCrmRoute
+  '/events-competitions': typeof EventsCompetitionsRoute
+  '/locations': typeof LocationsRoute
+  '/maintenance': typeof MaintenanceRoute
   '/members': typeof MembersRoute
+  '/memberships': typeof MembershipsRoute
+  '/passes-tickets': typeof PassesTicketsRoute
+  '/point-of-sale': typeof PointOfSaleRoute
+  '/products-inventory': typeof ProductsInventoryRoute
+  '/route-setting': typeof RouteSettingRoute
+  '/routes': typeof RoutesRoute
+  '/settings': typeof SettingsRoute
+  '/staff-permissions': typeof StaffPermissionsRoute
+  '/transactions': typeof TransactionsRoute
+  '/waivers-agreements': typeof WaiversAgreementsRoute
+  '/walls-zones': typeof WallsZonesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
+  '/bookings-classes': typeof BookingsClassesRoute
+  '/calendar': typeof CalendarRoute
+  '/check-ins': typeof CheckInsRoute
   '/climbs': typeof ClimbsRoute
+  '/customers-crm': typeof CustomersCrmRoute
+  '/events-competitions': typeof EventsCompetitionsRoute
+  '/locations': typeof LocationsRoute
+  '/maintenance': typeof MaintenanceRoute
   '/members': typeof MembersRoute
+  '/memberships': typeof MembershipsRoute
+  '/passes-tickets': typeof PassesTicketsRoute
+  '/point-of-sale': typeof PointOfSaleRoute
+  '/products-inventory': typeof ProductsInventoryRoute
+  '/route-setting': typeof RouteSettingRoute
+  '/routes': typeof RoutesRoute
+  '/settings': typeof SettingsRoute
+  '/staff-permissions': typeof StaffPermissionsRoute
+  '/transactions': typeof TransactionsRoute
+  '/waivers-agreements': typeof WaiversAgreementsRoute
+  '/walls-zones': typeof WallsZonesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/analytics' | '/climbs' | '/members'
+  fullPaths:
+    | '/'
+    | '/analytics'
+    | '/bookings-classes'
+    | '/calendar'
+    | '/check-ins'
+    | '/climbs'
+    | '/customers-crm'
+    | '/events-competitions'
+    | '/locations'
+    | '/maintenance'
+    | '/members'
+    | '/memberships'
+    | '/passes-tickets'
+    | '/point-of-sale'
+    | '/products-inventory'
+    | '/route-setting'
+    | '/routes'
+    | '/settings'
+    | '/staff-permissions'
+    | '/transactions'
+    | '/waivers-agreements'
+    | '/walls-zones'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analytics' | '/climbs' | '/members'
-  id: '__root__' | '/' | '/analytics' | '/climbs' | '/members'
+  to:
+    | '/'
+    | '/analytics'
+    | '/bookings-classes'
+    | '/calendar'
+    | '/check-ins'
+    | '/climbs'
+    | '/customers-crm'
+    | '/events-competitions'
+    | '/locations'
+    | '/maintenance'
+    | '/members'
+    | '/memberships'
+    | '/passes-tickets'
+    | '/point-of-sale'
+    | '/products-inventory'
+    | '/route-setting'
+    | '/routes'
+    | '/settings'
+    | '/staff-permissions'
+    | '/transactions'
+    | '/waivers-agreements'
+    | '/walls-zones'
+  id:
+    | '__root__'
+    | '/'
+    | '/analytics'
+    | '/bookings-classes'
+    | '/calendar'
+    | '/check-ins'
+    | '/climbs'
+    | '/customers-crm'
+    | '/events-competitions'
+    | '/locations'
+    | '/maintenance'
+    | '/members'
+    | '/memberships'
+    | '/passes-tickets'
+    | '/point-of-sale'
+    | '/products-inventory'
+    | '/route-setting'
+    | '/routes'
+    | '/settings'
+    | '/staff-permissions'
+    | '/transactions'
+    | '/waivers-agreements'
+    | '/walls-zones'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
+  BookingsClassesRoute: typeof BookingsClassesRoute
+  CalendarRoute: typeof CalendarRoute
+  CheckInsRoute: typeof CheckInsRoute
   ClimbsRoute: typeof ClimbsRoute
+  CustomersCrmRoute: typeof CustomersCrmRoute
+  EventsCompetitionsRoute: typeof EventsCompetitionsRoute
+  LocationsRoute: typeof LocationsRoute
+  MaintenanceRoute: typeof MaintenanceRoute
   MembersRoute: typeof MembersRoute
+  MembershipsRoute: typeof MembershipsRoute
+  PassesTicketsRoute: typeof PassesTicketsRoute
+  PointOfSaleRoute: typeof PointOfSaleRoute
+  ProductsInventoryRoute: typeof ProductsInventoryRoute
+  RouteSettingRoute: typeof RouteSettingRoute
+  RoutesRoute: typeof RoutesRoute
+  SettingsRoute: typeof SettingsRoute
+  StaffPermissionsRoute: typeof StaffPermissionsRoute
+  TransactionsRoute: typeof TransactionsRoute
+  WaiversAgreementsRoute: typeof WaiversAgreementsRoute
+  WallsZonesRoute: typeof WallsZonesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,11 +332,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bookings-classes': {
+      id: '/bookings-classes'
+      path: '/bookings-classes'
+      fullPath: '/bookings-classes'
+      preLoaderRoute: typeof BookingsClassesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/check-ins': {
+      id: '/check-ins'
+      path: '/check-ins'
+      fullPath: '/check-ins'
+      preLoaderRoute: typeof CheckInsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/climbs': {
       id: '/climbs'
       path: '/climbs'
       fullPath: '/climbs'
       preLoaderRoute: typeof ClimbsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers-crm': {
+      id: '/customers-crm'
+      path: '/customers-crm'
+      fullPath: '/customers-crm'
+      preLoaderRoute: typeof CustomersCrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events-competitions': {
+      id: '/events-competitions'
+      path: '/events-competitions'
+      fullPath: '/events-competitions'
+      preLoaderRoute: typeof EventsCompetitionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/locations': {
+      id: '/locations'
+      path: '/locations'
+      fullPath: '/locations'
+      preLoaderRoute: typeof LocationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/maintenance': {
+      id: '/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof MaintenanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/members': {
@@ -99,14 +395,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MembersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/memberships': {
+      id: '/memberships'
+      path: '/memberships'
+      fullPath: '/memberships'
+      preLoaderRoute: typeof MembershipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passes-tickets': {
+      id: '/passes-tickets'
+      path: '/passes-tickets'
+      fullPath: '/passes-tickets'
+      preLoaderRoute: typeof PassesTicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/point-of-sale': {
+      id: '/point-of-sale'
+      path: '/point-of-sale'
+      fullPath: '/point-of-sale'
+      preLoaderRoute: typeof PointOfSaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products-inventory': {
+      id: '/products-inventory'
+      path: '/products-inventory'
+      fullPath: '/products-inventory'
+      preLoaderRoute: typeof ProductsInventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/route-setting': {
+      id: '/route-setting'
+      path: '/route-setting'
+      fullPath: '/route-setting'
+      preLoaderRoute: typeof RouteSettingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/routes': {
+      id: '/routes'
+      path: '/routes'
+      fullPath: '/routes'
+      preLoaderRoute: typeof RoutesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/staff-permissions': {
+      id: '/staff-permissions'
+      path: '/staff-permissions'
+      fullPath: '/staff-permissions'
+      preLoaderRoute: typeof StaffPermissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/waivers-agreements': {
+      id: '/waivers-agreements'
+      path: '/waivers-agreements'
+      fullPath: '/waivers-agreements'
+      preLoaderRoute: typeof WaiversAgreementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/walls-zones': {
+      id: '/walls-zones'
+      path: '/walls-zones'
+      fullPath: '/walls-zones'
+      preLoaderRoute: typeof WallsZonesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
+  BookingsClassesRoute: BookingsClassesRoute,
+  CalendarRoute: CalendarRoute,
+  CheckInsRoute: CheckInsRoute,
   ClimbsRoute: ClimbsRoute,
+  CustomersCrmRoute: CustomersCrmRoute,
+  EventsCompetitionsRoute: EventsCompetitionsRoute,
+  LocationsRoute: LocationsRoute,
+  MaintenanceRoute: MaintenanceRoute,
   MembersRoute: MembersRoute,
+  MembershipsRoute: MembershipsRoute,
+  PassesTicketsRoute: PassesTicketsRoute,
+  PointOfSaleRoute: PointOfSaleRoute,
+  ProductsInventoryRoute: ProductsInventoryRoute,
+  RouteSettingRoute: RouteSettingRoute,
+  RoutesRoute: RoutesRoute,
+  SettingsRoute: SettingsRoute,
+  StaffPermissionsRoute: StaffPermissionsRoute,
+  TransactionsRoute: TransactionsRoute,
+  WaiversAgreementsRoute: WaiversAgreementsRoute,
+  WallsZonesRoute: WallsZonesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
