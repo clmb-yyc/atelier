@@ -1,3 +1,6 @@
 spring:
   application:
     name: atelier
+logging:
+  level:
+    org.springframework.security: DEBUG
