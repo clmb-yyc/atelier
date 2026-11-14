@@ -30,7 +30,7 @@ public class User {
         this.id = id;
     }
 
-    public String getPassword() {
+    public String getPasswordHash() {
         return password_hash;
     }
 
