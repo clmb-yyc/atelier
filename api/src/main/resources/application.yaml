@@ -1,6 +1,10 @@
 spring:
   application:
     name: atelier
+  datasource:
+    url: jdbc:postgresql://localhost:5432/atelier
+    username: postgres
+    password: "${ATELIER_DB_PASSWORD}"
 logging:
   level:
     org.springframework.security: DEBUG
