@@ -12,7 +12,7 @@ public class User {
     @Id
     private UUID id;
     private String username;
-    private String password;
+    private String password_hash;
 
     public String getUsername() {
         return username;
@@ -31,11 +31,11 @@ public class User {
     }
 
     public String getPassword() {
-        return password;
+        return password_hash;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPassword(String password_hash) {
+        this.password_hash = password_hash;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class User {
         return "User{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
+                ", password_hash='" + password_hash + '\'' +
                 '}';
     }
 }
