@@ -2,11 +2,15 @@ package com.clmb.atelier.users;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import java.util.UUID;
 
 @Entity
+@Table(name = "users")
 public class User {
     @Id
-    private int id;
+    private UUID id;
     private String username;
     private String password;
 
@@ -18,11 +22,11 @@ public class User {
         this.username = username;
     }
 
-    public int getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
