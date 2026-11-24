@@ -1,6 +1,9 @@
 package com.clmb.atelier.users;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -12,7 +15,12 @@ public class User {
     @Id
     private UUID id;
     private String username;
-    private String password_hash;
+    @Column(name = "password_hash")
+    private String passwordHash;
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    public enum Role { VIEWER, STAFF }
 
     public String getUsername() {
         return username;
@@ -31,19 +39,18 @@ public class User {
     }
 
     public String getPasswordHash() {
-        return password_hash;
+        return passwordHash;
     }
 
-    public void setPassword(String password_hash) {
-        this.password_hash = password_hash;
+    public void setPassword(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", username='" + username + '\'' +
-                ", password_hash='" + password_hash + '\'' +
-                '}';
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

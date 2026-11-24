@@ -2,9 +2,16 @@ spring:
   application:
     name: atelier
   datasource:
-    url: jdbc:postgresql://localhost:5432/atelier
-    username: postgres
+    url: "${ATELIER_DB_URL:jdbc:postgresql://localhost:5432/atelier}"
+    username: "${ATELIER_DB_USER:postgres}"
     password: "${ATELIER_DB_PASSWORD}"
-logging:
-  level:
-    org.springframework.security: DEBUG
+  sql:
+    init:
+      mode: always
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+atelier:
+  jwt:
+    secret: "${ATELIER_JWT_SECRET}"
