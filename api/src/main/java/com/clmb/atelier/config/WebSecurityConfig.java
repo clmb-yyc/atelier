@@ -25,7 +25,10 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -92,18 +95,30 @@ public class WebSecurityConfig {
         JwtAuthenticationConverter jwtAuthentication = new JwtAuthenticationConverter();
         jwtAuthentication.setJwtGrantedAuthoritiesConverter(authorities);
 
+        BearerTokenResolver bearerTokens = new DefaultBearerTokenResolver();
+        PathPatternRequestMatcher refreshRequest = PathPatternRequestMatcher.withDefaults()
+                .matcher(HttpMethod.POST, "/api/auth/refresh");
+
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers(refreshRequest).permitAll()
                         .requestMatchers("/api/users/**").hasRole("STAFF")
                         .requestMatchers(HttpMethod.GET, "/api/locations/**").hasAnyRole("VIEWER", "STAFF")
                         .requestMatchers("/api/locations/**").hasRole("STAFF")
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(resourceServer -> resourceServer.jwt(jwt ->
-                        jwt.jwtAuthenticationConverter(jwtAuthentication)))
+                .oauth2ResourceServer(resourceServer -> resourceServer
+                        .bearerTokenResolver(request -> {
+                            // The refresh endpoint authenticates with the refresh token in its request body.
+                            if (refreshRequest.matches(request)) {
+                                return null;
+                            }
+                            return bearerTokens.resolve(request);
+                        })
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthentication)))
                 .build();
     }
 }

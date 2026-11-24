@@ -30,8 +30,17 @@ public class AuthController {
 
     @PostMapping("/login")
     public AccessToken login(@RequestBody Credentials credentials) {
-        AuthService.LoginResult result = authService.login(credentials.username(), credentials.password());
-        return new AccessToken(result.token(), "Bearer", result.expiresIn());
+        return tokenResponse(authService.login(credentials.username(), credentials.password()));
+    }
+
+    @PostMapping("/refresh")
+    public AccessToken refresh(@RequestBody RefreshRequest request) {
+        return tokenResponse(authService.refresh(request.refreshToken()));
+    }
+
+    private AccessToken tokenResponse(LoginResult result) {
+        return new AccessToken(result.token(), "Bearer", result.expiresIn(),
+                result.refreshToken(), result.refreshExpiresIn());
     }
 
     @ExceptionHandler(AuthService.InvalidInputException.class)
@@ -48,5 +57,11 @@ public class AuthController {
     ResponseEntity<Map<String, String>> badCredentials() {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", "We couldn't sign you in. Check your username and password."));
+    }
+
+    @ExceptionHandler(AuthService.InvalidRefreshTokenException.class)
+    ResponseEntity<Map<String, String>> invalidRefreshToken() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "Your session has expired. Please sign in again."));
     }
 }
