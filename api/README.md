@@ -2,6 +2,8 @@
 
 Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, timestamps use `timestamptz`, and fields marked **optional** can be null. Account IDs refer to accounts in the Auth service.
 
+<img width="966" height="745" alt="atelier-db" src="https://github.com/user-attachments/assets/1e552b88-3958-47ad-9381-6d66af58f50e" />
+
 | Table | Fields |
 | --- | --- |
 | `organizations` | `id` (PK), `name`, `archived_at` (optional) |
