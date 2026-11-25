@@ -52,10 +52,10 @@ public class AdministrationAccess {
         }
     }
 
-    public Gym requireGymCheckInAccess(UUID actorId, UUID gymId) {
+    public Gym requireFrontDeskAccess(UUID actorId, UUID gymId) {
         Gym gym = requireActiveGym(gymId);
         if (!isGymAdmin(actorId, gym) && !staff.existsById(new GymStaff.Key(gymId, actorId))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Gym check-in access required");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Front desk access required");
         }
         return gym;
     }

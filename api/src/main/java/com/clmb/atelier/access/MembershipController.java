@@ -1,9 +1,11 @@
 package com.clmb.atelier.access;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,7 +34,7 @@ public class MembershipController {
     public PlanResponse createPlan(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
                                    @RequestBody PlanRequest request) {
         return PlanResponse.from(memberships.createPlan(accountId(jwt), organizationId, request.name(),
-                request.gymId(), request.validUntil(), request.visitLimit()));
+                request.gymId(), request.planType(), request.validUntil(), request.visitLimit()));
     }
 
     @GetMapping("/organizations/{organizationId}/access-plans")
@@ -55,6 +57,14 @@ public class MembershipController {
                 request.startsAt(), request.expiresAt()));
     }
 
+    @PostMapping("/gyms/{gymId}/access-plans/{planId}/passes")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PassResponse issuePassAtGym(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,
+                                       @PathVariable UUID planId, @RequestBody IssuePassRequest request) {
+        return PassResponse.from(memberships.issuePassAtGym(accountId(jwt), gymId, planId, request.accountId(),
+                request.startsAt(), request.expiresAt()));
+    }
+
     @DeleteMapping("/organizations/{organizationId}/member-passes/{passId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void revokePass(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
@@ -67,14 +77,20 @@ public class MembershipController {
         return memberships.listMemberPasses(accountId(jwt)).stream().map(PassResponse::from).toList();
     }
 
-    public record PlanRequest(String name, UUID gymId, Instant validUntil, Integer visitLimit) {}
+    @ExceptionHandler(PassIssuanceConflict.class)
+    ProblemDetail passConflict(PassIssuanceConflict conflict) {
+        return conflict.getBody();
+    }
+
+    public record PlanRequest(String name, UUID gymId, AccessPlan.PlanType planType, Instant validUntil,
+                              Integer visitLimit) {}
     public record IssuePassRequest(UUID accountId, Instant startsAt, Instant expiresAt) {}
 
-    public record PlanResponse(UUID id, UUID organizationId, UUID gymId, String name, Instant validUntil,
-                               Integer visitLimit, Instant archivedAt) {
+    public record PlanResponse(UUID id, UUID organizationId, UUID gymId, String name, AccessPlan.PlanType planType,
+                               Instant validUntil, Integer visitLimit, Instant archivedAt) {
         static PlanResponse from(AccessPlan plan) {
             return new PlanResponse(plan.getId(), plan.getOrganizationId(), plan.getGymId(), plan.getName(),
-                    plan.getValidUntil(), plan.getVisitLimit(), plan.getArchivedAt());
+                    plan.getPlanType(), plan.getValidUntil(), plan.getVisitLimit(), plan.getArchivedAt());
         }
     }
 

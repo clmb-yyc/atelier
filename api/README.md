@@ -13,7 +13,7 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 | `gym_staff` | `gym_id` and `account_id` (composite PK) |
 | `walls` | `id` (PK), `gym_id`, `name`, `discipline` (`BOULDER` or `ROPE`), `archived_at` (optional) |
 | `routes` | `id` (PK), `wall_id`, `name` (optional), `grade` (text), `set_at`, `removed_at` (optional) |
-| `access_plans` | `id` (PK), `organization_id`, `gym_id` (optional), `name`, `valid_until` (optional), `visit_limit` (optional integer), `archived_at` (optional) |
+| `access_plans` | `id` (PK), `organization_id`, `gym_id` (optional), `name`, `plan_type` (optional on older plans), `valid_until` (optional), `visit_limit` (optional integer), `archived_at` (optional) |
 | `member_passes` | `id` (PK), `access_plan_id`, `account_id`, `starts_at`, `expires_at`, `revoked_at` (optional) |
 | `check_ins` | `id` (PK), `gym_id`, `member_pass_id`, `checked_in_at` |
 
@@ -45,16 +45,18 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 
 | Method and path | Who can call it | Request body | Success response |
 | --- | --- | --- | --- |
-| `POST /api/organizations/{organizationId}/access-plans` | Organization admin | `name`, optional `gymId`, `validUntil`, and `visitLimit` | `201 Created` with an access plan. Omit `gymId` for an organization-wide plan or `visitLimit` for unlimited visits. |
+| `POST /api/organizations/{organizationId}/access-plans` | Organization admin | `name`, `planType` (`MEMBERSHIP`, `DAY_PASS`, or `VISIT_PASS`), optional `gymId`, `validUntil`, and `visitLimit` | `201 Created` with an access plan. Omit `gymId` for an organization-wide plan or `visitLimit` for unlimited visits. |
 | `GET /api/organizations/{organizationId}/access-plans` | Organization admin | None | `200 OK` with an array of access plans, including archived plans, ordered by name. |
 | `DELETE /api/organizations/{organizationId}/access-plans/{planId}` | Organization admin | None | `204 No Content`. Archives the plan, closing it to new issuance. |
 | `POST /api/organizations/{organizationId}/access-plans/{planId}/passes` | Organization admin | `accountId`, `expiresAt`, optional `startsAt` (defaults to now) | `201 Created` with a member pass. |
+| `POST /api/gyms/{gymId}/access-plans/{planId}/passes` | Gym staff, gym admin, or admin of its organization | `accountId`, `expiresAt`, optional `startsAt` (defaults to now) | `201 Created` with a member pass. The plan must cover that gym. |
 | `DELETE /api/organizations/{organizationId}/member-passes/{passId}` | Organization admin | None | `204 No Content`. Revokes the pass. |
 | `GET /api/me/member-passes` | Signed-in account | None | `200 OK` with an array of the caller's member passes, latest expiry first. |
 
-- An access plan returns `id`, `organizationId`, `gymId`, `name`, `validUntil`, `visitLimit`, and `archivedAt`.
+- An access plan returns `id`, `organizationId`, `gymId`, `name`, `planType`, `validUntil`, `visitLimit`, and `archivedAt`. Older plans have no type and cannot issue new passes.
 - A member pass returns `id`, `accessPlanId`, `accountId`, `startsAt`, `expiresAt`, and `revokedAt`.
 - `validUntil` is the cutoff for issuing passes under a plan. An issued pass uses its own `expiresAt`.
+- Issuance checks overlapping passes for the same account and organization. A conflicting membership returns `409 EXISTING_MEMBERSHIP`. Unused day or visit passes return `409 EXISTING_PASSES_REVIEW` when starting a membership. The response includes `conflictingPassIds` for the front desk. Review leaves the existing passes intact.
 
 ### Check-ins
 
@@ -70,4 +72,4 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | `401 Unauthorized` | The access token is missing or invalid. |
 | `403 Forbidden` | The caller lacks the required gym or organization permission, or the pass is restricted to another gym in the same organization. |
 | `404 Not Found` | A resource is missing or unavailable in the requested scope, such as a wall in another gym or a pass issued by another organization. |
-| `409 Conflict` | The plan is closed to new passes, or a check-in uses a revoked, expired, not-yet-active, or exhausted pass. |
+| `409 Conflict` | Pass issuance is blocked or needs review, or a check-in uses a revoked, expired, not-yet-active, or exhausted pass. |

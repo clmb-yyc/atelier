@@ -2,6 +2,8 @@ package com.clmb.atelier.access;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -13,6 +15,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "access_plans")
 public class AccessPlan {
+    public enum PlanType { MEMBERSHIP, DAY_PASS, VISIT_PASS }
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -26,6 +30,10 @@ public class AccessPlan {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_type", length = 16, updatable = false)
+    private PlanType planType;
+
     @Column(name = "valid_until")
     private Instant validUntil;
 
@@ -37,10 +45,12 @@ public class AccessPlan {
 
     protected AccessPlan() {}
 
-    public AccessPlan(UUID organizationId, UUID gymId, String name, Instant validUntil, Integer visitLimit) {
+    public AccessPlan(UUID organizationId, UUID gymId, String name, PlanType planType, Instant validUntil,
+                      Integer visitLimit) {
         this.organizationId = organizationId;
         this.gymId = gymId;
         this.name = name;
+        this.planType = planType;
         this.validUntil = validUntil;
         this.visitLimit = visitLimit;
     }
@@ -59,6 +69,10 @@ public class AccessPlan {
 
     public String getName() {
         return name;
+    }
+
+    public PlanType getPlanType() {
+        return planType;
     }
 
     public Instant getValidUntil() {

@@ -58,7 +58,8 @@ class PersistenceTests {
         var employee = staff.save(new GymStaff(gym.getId(), UUID.randomUUID()));
         Wall wall = walls.save(new Wall(gym.getId(), "Slab", Wall.Discipline.BOULDER));
         Route route = routes.save(new Route(wall.getId(), null, "V4", NOW));
-        AccessPlan plan = plans.save(new AccessPlan(organization.getId(), gym.getId(), "10 visits", null, 10));
+        AccessPlan plan = plans.save(new AccessPlan(organization.getId(), gym.getId(), "10 visits",
+                AccessPlan.PlanType.VISIT_PASS, null, 10));
         MemberPass pass = passes.save(new MemberPass(plan.getId(), memberId, NOW, NOW.plusSeconds(3600)));
         checkIns.save(new CheckIn(gym.getId(), pass.getId(), NOW));
 
@@ -86,7 +87,8 @@ class PersistenceTests {
         Organization second = organizations.save(new Organization("Another Gym Co"));
         Gym gym = gyms.save(new Gym(second.getId(), "Downtown"));
 
-        assertThatThrownBy(() -> plans.saveAndFlush(new AccessPlan(first.getId(), gym.getId(), "10 visits", null, 10)))
+        assertThatThrownBy(() -> plans.saveAndFlush(new AccessPlan(first.getId(), gym.getId(), "10 visits",
+                AccessPlan.PlanType.VISIT_PASS, null, 10)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }
