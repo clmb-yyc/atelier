@@ -57,6 +57,7 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/organizations").hasRole("STAFF")
                         .requestMatchers(HttpMethod.GET, "/api/locations/**").hasAnyRole("VIEWER", "STAFF")
                         .requestMatchers("/api/locations/**").hasRole("STAFF")
                         .anyRequest().authenticated())
