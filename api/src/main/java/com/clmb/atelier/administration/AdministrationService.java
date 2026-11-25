@@ -3,6 +3,7 @@ package com.clmb.atelier.administration;
 import com.clmb.atelier.gyms.Gym;
 import com.clmb.atelier.gyms.GymAdminRepository;
 import com.clmb.atelier.gyms.GymRepository;
+import com.clmb.atelier.gyms.GymStaffRepository;
 import com.clmb.atelier.organizations.Organization;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
 import com.clmb.atelier.organizations.OrganizationRepository;
@@ -25,18 +26,21 @@ public class AdministrationService {
     private final OrganizationAdminRepository organizationAdmins;
     private final GymRepository gyms;
     private final GymAdminRepository gymAdmins;
+    private final GymStaffRepository staff;
     private final WallRepository walls;
     private final RouteRepository routes;
     private final AdministrationAccess access;
 
     public AdministrationService(
             OrganizationRepository organizations, OrganizationAdminRepository organizationAdmins,
-            GymRepository gyms, GymAdminRepository gymAdmins, WallRepository walls, RouteRepository routes,
+            GymRepository gyms, GymAdminRepository gymAdmins, GymStaffRepository staff,
+            WallRepository walls, RouteRepository routes,
             AdministrationAccess access) {
         this.organizations = organizations;
         this.organizationAdmins = organizationAdmins;
         this.gyms = gyms;
         this.gymAdmins = gymAdmins;
+        this.staff = staff;
         this.walls = walls;
         this.routes = routes;
         this.access = access;
@@ -62,6 +66,11 @@ public class AdministrationService {
         Gym gym = access.requireActiveGym(gymId);
         access.requireOrganizationAdmin(actorId, gym.getOrganizationId());
         return gymAdmins.grant(gymId, accountId) == 1;
+    }
+
+    public boolean grantGymStaff(UUID actorId, UUID gymId, UUID accountId) {
+        access.requireGymAdmin(actorId, gymId);
+        return staff.grant(gymId, accountId) == 1;
     }
 
     public Wall createWall(UUID actorId, UUID gymId, String name, Wall.Discipline discipline) {

@@ -57,6 +57,12 @@ public class AdministrationController {
         return grantResponse(administration.grantGymAdmin(accountId(jwt), gymId, accountId));
     }
 
+    @PutMapping("/gyms/{gymId}/staff/{accountId}")
+    public ResponseEntity<Void> grantGymStaff(@AuthenticationPrincipal Jwt jwt,
+                                              @PathVariable UUID gymId, @PathVariable UUID accountId) {
+        return grantResponse(administration.grantGymStaff(accountId(jwt), gymId, accountId));
+    }
+
     @PostMapping("/gyms/{gymId}/walls")
     @ResponseStatus(HttpStatus.CREATED)
     public WallResponse createWall(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,

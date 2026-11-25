@@ -14,10 +14,6 @@ public interface MemberPassRepository extends JpaRepository<MemberPass, UUID> {
     List<MemberPass> findAllByAccountIdOrderByExpiresAtDesc(UUID accountId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select pass from MemberPass pass where pass.id = :id and pass.accountId = :accountId")
-    Optional<MemberPass> findOwnedForUpdate(@Param("id") UUID id, @Param("accountId") UUID accountId);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select pass from MemberPass pass
             where pass.id = :id and exists (

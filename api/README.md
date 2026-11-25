@@ -36,6 +36,7 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | `POST /api/organizations/{organizationId}/gyms` | Organization admin | `name` | `201 Created` with `id`, `organizationId`, and `name`. |
 | `PUT /api/organizations/{organizationId}/admins/{accountId}` | Organization admin | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
 | `PUT /api/gyms/{gymId}/admins/{accountId}` | Admin of the gym's organization | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
+| `PUT /api/gyms/{gymId}/staff/{accountId}` | Gym admin or admin of its organization | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
 | `POST /api/gyms/{gymId}/walls` | Gym admin or admin of its organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. |
 | `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Gym admin or admin of its organization | `grade`, optional `name` | `201 Created` with `id`, `wallId`, `name`, `grade`, and `setAt`. |
 | `GET /api/locations/{locationId}/routes` | Auth `VIEWER` or `STAFF` | None | `200 OK` with the plain text `hello world`. This placeholder accepts a string for `locationId`. |
@@ -59,7 +60,7 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 
 | Method and path | Who can call it | Request body | Success response |
 | --- | --- | --- | --- |
-| `POST /api/gyms/{gymId}/check-ins` | Signed-in member using their own pass | `memberPassId` | `201 Created` with `id`, `gymId`, `memberPassId`, and `checkedInAt`. Each success records one visit. |
+| `POST /api/gyms/{gymId}/check-ins` | Staff assigned to the gym, a gym admin, or an admin of its organization | `memberPassId` | `201 Created` with `id`, `gymId`, `memberPassId`, and `checkedInAt`. Each success records one visit for the member who holds the pass. |
 
 ### Error responses
 
@@ -67,6 +68,6 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | --- | --- |
 | `400 Bad Request` | A request field is missing or invalid, such as a missing `expiresAt` when issuing a pass. |
 | `401 Unauthorized` | The access token is missing or invalid. |
-| `403 Forbidden` | The caller lacks the required admin assignment or role, or the pass does not cover the requested gym. |
-| `404 Not Found` | A resource is missing or unavailable in the requested scope, such as a wall in another gym or a pass owned by another member. |
+| `403 Forbidden` | The caller lacks the required gym or organization permission, or the pass is restricted to another gym in the same organization. |
+| `404 Not Found` | A resource is missing or unavailable in the requested scope, such as a wall in another gym or a pass issued by another organization. |
 | `409 Conflict` | The plan is closed to new passes, or a check-in uses a revoked, expired, not-yet-active, or exhausted pass. |

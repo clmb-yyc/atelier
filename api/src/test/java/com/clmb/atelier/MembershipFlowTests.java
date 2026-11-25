@@ -7,6 +7,8 @@ import com.clmb.atelier.access.MemberPassRepository;
 import com.clmb.atelier.checkins.CheckInRepository;
 import com.clmb.atelier.gyms.Gym;
 import com.clmb.atelier.gyms.GymRepository;
+import com.clmb.atelier.gyms.GymStaff;
+import com.clmb.atelier.gyms.GymStaffRepository;
 import com.clmb.atelier.organizations.Organization;
 import com.clmb.atelier.organizations.OrganizationAdmin;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
@@ -36,6 +38,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -48,12 +51,15 @@ class MembershipFlowTests {
     @Autowired OrganizationRepository organizations;
     @Autowired OrganizationAdminRepository admins;
     @Autowired GymRepository gyms;
+    @Autowired GymStaffRepository gymStaff;
     @Autowired AccessPlanRepository plans;
     @Autowired MemberPassRepository passes;
     @Autowired CheckInRepository checkIns;
 
     private final UUID admin = UUID.randomUUID();
     private final UUID member = UUID.randomUUID();
+    private final UUID staff = UUID.randomUUID();
+    private final UUID otherStaff = UUID.randomUUID();
     private UUID organizationId;
     private UUID gymId;
     private UUID siblingGymId;
@@ -68,11 +74,12 @@ class MembershipFlowTests {
         gymId = gyms.save(new Gym(organizationId, "Downtown")).getId();
         siblingGymId = gyms.save(new Gym(organizationId, "North")).getId();
         otherGymId = gyms.save(new Gym(otherOrganization, "West")).getId();
+        gymStaff.save(new GymStaff(otherGymId, otherStaff));
         planPath = "/api/organizations/" + organizationId + "/access-plans";
     }
 
     @Test
-    void issuedPassSurvivesPlanArchivalAndOnlyWorksForItsOwnerAtTheRightGym() throws Exception {
+    void gymStaffCanUseMembersPassAtTheirGymAfterPlanArchival() throws Exception {
         postJson(planPath, member, Map.of("name", "Unauthorized")).andExpect(status().isForbidden());
         postJson(planPath, admin, Map.of("name", "Other gym", "gymId", otherGymId))
                 .andExpect(status().isNotFound());
@@ -89,12 +96,20 @@ class MembershipFlowTests {
         deleteAsAdmin(planPath + "/" + plan).andExpect(status().isNoContent());
         postJson(issuePath, admin, Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600)))
                 .andExpect(status().isConflict());
-        checkIn(gymId, pass, admin).andExpect(status().isNotFound());
-        checkIn(siblingGymId, pass, member).andExpect(status().isForbidden());
-        checkIn(otherGymId, pass, member).andExpect(status().isForbidden());
-        checkIn(gymId, pass, member).andExpect(status().isCreated())
+        checkIn(gymId, pass, member).andExpect(status().isForbidden());
+        checkIn(gymId, pass, staff).andExpect(status().isForbidden());
+        assignStaff(gymId, member, staff).andExpect(status().isForbidden());
+        assignStaff(gymId, admin, staff).andExpect(status().isCreated());
+        assignStaff(gymId, admin, staff).andExpect(status().isNoContent());
+        assignStaff(gymId, staff, member).andExpect(status().isForbidden());
+        assignStaff(siblingGymId, staff, member).andExpect(status().isForbidden());
+
+        checkIn(siblingGymId, pass, staff).andExpect(status().isForbidden());
+        checkIn(siblingGymId, pass, admin).andExpect(status().isForbidden());
+        checkIn(otherGymId, pass, otherStaff).andExpect(status().isNotFound());
+        checkIn(gymId, pass, staff).andExpect(status().isCreated())
                 .andExpect(jsonPath("$.memberPassId").value(pass.toString()));
-        checkIn(gymId, pass, member).andExpect(status().isConflict());
+        checkIn(gymId, pass, staff).andExpect(status().isConflict());
         assertThat(checkIns.countByMemberPassId(pass)).isEqualTo(1);
     }
 
@@ -107,14 +122,14 @@ class MembershipFlowTests {
 
         UUID expired = passes.save(new MemberPass(closedPlan, member, now.minusSeconds(120), now.minusSeconds(60))).getId();
         UUID future = passes.save(new MemberPass(closedPlan, member, now.plusSeconds(60), now.plusSeconds(120))).getId();
-        checkIn(gymId, expired, member).andExpect(status().isConflict());
-        checkIn(gymId, future, member).andExpect(status().isConflict());
+        checkIn(gymId, expired, admin).andExpect(status().isConflict());
+        checkIn(gymId, future, admin).andExpect(status().isConflict());
 
         UUID pass = passes.save(new MemberPass(closedPlan, member, now.minusSeconds(60), now.plusSeconds(3600))).getId();
-        checkIn(siblingGymId, pass, member).andExpect(status().isCreated());
+        checkIn(siblingGymId, pass, admin).andExpect(status().isCreated());
         deleteAsAdmin("/api/organizations/" + organizationId + "/member-passes/" + pass)
                 .andExpect(status().isNoContent());
-        checkIn(siblingGymId, pass, member).andExpect(status().isConflict());
+        checkIn(siblingGymId, pass, admin).andExpect(status().isConflict());
         assertThat(checkIns.countByMemberPassId(pass)).isEqualTo(1);
     }
 
@@ -135,7 +150,7 @@ class MembershipFlowTests {
     private Callable<Integer> checkInWhenReady(CyclicBarrier start, UUID targetGym, UUID pass) {
         return () -> {
             start.await(10, TimeUnit.SECONDS);
-            return checkIn(targetGym, pass, member).andReturn().getResponse().getStatus();
+            return checkIn(targetGym, pass, admin).andReturn().getResponse().getStatus();
         };
     }
 
@@ -146,6 +161,11 @@ class MembershipFlowTests {
 
     private ResultActions checkIn(UUID targetGym, UUID pass, UUID actor) throws Exception {
         return postJson("/api/gyms/" + targetGym + "/check-ins", actor, Map.of("memberPassId", pass));
+    }
+
+    private ResultActions assignStaff(UUID targetGym, UUID actor, UUID account) throws Exception {
+        return mvc.perform(put("/api/gyms/" + targetGym + "/staff/" + account)
+                .with(jwt().jwt(builder -> builder.subject(actor.toString()))));
     }
 
     private ResultActions postJson(String path, UUID actor, Map<String, ?> body) throws Exception {

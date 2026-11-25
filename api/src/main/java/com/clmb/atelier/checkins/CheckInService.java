@@ -31,25 +31,25 @@ public class CheckInService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public CheckIn checkIn(UUID accountId, UUID gymId, UUID passId) {
+    public CheckIn checkIn(UUID actorId, UUID gymId, UUID passId) {
         if (passId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "memberPassId is required");
         }
-        Gym gym = access.requireActiveGym(gymId);
+        Gym gym = access.requireGymCheckInAccess(actorId, gymId);
         // Hold the pass lock across the visit count and insert so two requests cannot use the final visit.
-        MemberPass pass = passes.findOwnedForUpdate(passId, accountId)
+        MemberPass pass = passes.findInOrganizationForUpdate(passId, gym.getOrganizationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member pass not found"));
+        // Plan archival and issuance deadlines do not affect passes that have already been issued.
+        AccessPlan plan = plans.findById(pass.getAccessPlanId()).orElseThrow();
+        if (plan.getGymId() != null && !plan.getGymId().equals(gymId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Member pass does not cover this gym");
+        }
+
         Instant now = Instant.now();
         if (pass.getRevokedAt() != null || pass.getStartsAt().isAfter(now) || !pass.getExpiresAt().isAfter(now)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Member pass is not active");
         }
 
-        AccessPlan plan = plans.findById(pass.getAccessPlanId()).orElseThrow();
-        // Plan archival and issuance deadlines do not affect passes that have already been issued.
-        if (!plan.getOrganizationId().equals(gym.getOrganizationId())
-                || (plan.getGymId() != null && !plan.getGymId().equals(gymId))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Member pass does not cover this gym");
-        }
         if (plan.getVisitLimit() != null && checkIns.countByMemberPassId(passId) >= plan.getVisitLimit()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Member pass has no visits remaining");
         }
