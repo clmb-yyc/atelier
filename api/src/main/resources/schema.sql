@@ -76,3 +76,4 @@ CREATE TABLE IF NOT EXISTS check_ins (
 );
 
 CREATE INDEX IF NOT EXISTS check_ins_member_pass_id_idx ON check_ins (member_pass_id);
+CREATE INDEX IF NOT EXISTS member_passes_account_id_idx ON member_passes (account_id);

@@ -15,10 +15,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.UUID;
+
+import static com.clmb.atelier.config.JwtAccount.accountId;
 
 @RestController
 @RequestMapping("/api")
@@ -70,18 +71,6 @@ public class AdministrationController {
                                      @PathVariable UUID wallId, @RequestBody RouteRequest request) {
         Route route = administration.createRoute(accountId(jwt), gymId, wallId, request.name(), request.grade());
         return new RouteResponse(route.getId(), route.getWallId(), route.getName(), route.getGrade(), route.getSetAt());
-    }
-
-    private static UUID accountId(Jwt jwt) {
-        String subject = jwt.getSubject();
-        if (subject != null) {
-            try {
-                return UUID.fromString(subject);
-            } catch (IllegalArgumentException ignored) {
-                // Auth uses UUID account IDs as token subjects.
-            }
-        }
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token subject must be an account UUID");
     }
 
     private static ResponseEntity<Void> grantResponse(boolean created) {

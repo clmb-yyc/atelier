@@ -1,11 +1,9 @@
 package com.clmb.atelier.administration;
 
 import com.clmb.atelier.gyms.Gym;
-import com.clmb.atelier.gyms.GymAdmin;
 import com.clmb.atelier.gyms.GymAdminRepository;
 import com.clmb.atelier.gyms.GymRepository;
 import com.clmb.atelier.organizations.Organization;
-import com.clmb.atelier.organizations.OrganizationAdmin;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
 import com.clmb.atelier.organizations.OrganizationRepository;
 import com.clmb.atelier.routes.Route;
@@ -29,16 +27,19 @@ public class AdministrationService {
     private final GymAdminRepository gymAdmins;
     private final WallRepository walls;
     private final RouteRepository routes;
+    private final AdministrationAccess access;
 
     public AdministrationService(
             OrganizationRepository organizations, OrganizationAdminRepository organizationAdmins,
-            GymRepository gyms, GymAdminRepository gymAdmins, WallRepository walls, RouteRepository routes) {
+            GymRepository gyms, GymAdminRepository gymAdmins, WallRepository walls, RouteRepository routes,
+            AdministrationAccess access) {
         this.organizations = organizations;
         this.organizationAdmins = organizationAdmins;
         this.gyms = gyms;
         this.gymAdmins = gymAdmins;
         this.walls = walls;
         this.routes = routes;
+        this.access = access;
     }
 
     public Organization createOrganization(UUID actorId, String name) {
@@ -48,25 +49,23 @@ public class AdministrationService {
     }
 
     public Gym createGym(UUID actorId, UUID organizationId, String name) {
-        requireActiveOrganization(organizationId);
-        requireOrganizationAdmin(actorId, organizationId);
+        access.requireOrganizationAdmin(actorId, organizationId);
         return gyms.save(new Gym(organizationId, requiredText(name, "name")));
     }
 
     public boolean grantOrganizationAdmin(UUID actorId, UUID organizationId, UUID accountId) {
-        requireActiveOrganization(organizationId);
-        requireOrganizationAdmin(actorId, organizationId);
+        access.requireOrganizationAdmin(actorId, organizationId);
         return organizationAdmins.grant(organizationId, accountId) == 1;
     }
 
     public boolean grantGymAdmin(UUID actorId, UUID gymId, UUID accountId) {
-        Gym gym = requireActiveGym(gymId);
-        requireOrganizationAdmin(actorId, gym.getOrganizationId());
+        Gym gym = access.requireActiveGym(gymId);
+        access.requireOrganizationAdmin(actorId, gym.getOrganizationId());
         return gymAdmins.grant(gymId, accountId) == 1;
     }
 
     public Wall createWall(UUID actorId, UUID gymId, String name, Wall.Discipline discipline) {
-        requireGymAdmin(actorId, gymId);
+        access.requireGymAdmin(actorId, gymId);
         if (discipline == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "discipline is required");
         }
@@ -74,42 +73,11 @@ public class AdministrationService {
     }
 
     public Route createRoute(UUID actorId, UUID gymId, UUID wallId, String name, String grade) {
-        requireGymAdmin(actorId, gymId);
+        access.requireGymAdmin(actorId, gymId);
         walls.findByIdAndGymIdAndArchivedAtIsNull(wallId, gymId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wall not found in this gym"));
         String routeName = name == null || name.isBlank() ? null : name.strip();
         return routes.save(new Route(wallId, routeName, requiredText(grade, "grade"), Instant.now()));
-    }
-
-    private void requireActiveOrganization(UUID organizationId) {
-        organizations.findById(organizationId)
-                .filter(organization -> organization.getArchivedAt() == null)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization not found"));
-    }
-
-    private Gym requireActiveGym(UUID gymId) {
-        Gym gym = gyms.findById(gymId).filter(candidate -> candidate.getArchivedAt() == null)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gym not found"));
-        requireActiveOrganization(gym.getOrganizationId());
-        return gym;
-    }
-
-    private void requireGymAdmin(UUID actorId, UUID gymId) {
-        Gym gym = requireActiveGym(gymId);
-        if (!isOrganizationAdmin(actorId, gym.getOrganizationId())
-                && !gymAdmins.existsById(new GymAdmin.Key(gymId, actorId))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Gym admin access required");
-        }
-    }
-
-    private void requireOrganizationAdmin(UUID actorId, UUID organizationId) {
-        if (!isOrganizationAdmin(actorId, organizationId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Organization admin access required");
-        }
-    }
-
-    private boolean isOrganizationAdmin(UUID actorId, UUID organizationId) {
-        return organizationAdmins.existsById(new OrganizationAdmin.Key(organizationId, actorId));
     }
 
     private static String requiredText(String value, String field) {
