@@ -39,7 +39,7 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | `PUT /api/gyms/{gymId}/staff/{accountId}` | Gym admin or admin of its organization | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
 | `POST /api/gyms/{gymId}/walls` | Gym admin or admin of its organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. |
 | `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Gym admin or admin of its organization | `grade`, optional `name` | `201 Created` with `id`, `wallId`, `name`, `grade`, and `setAt`. |
-| `GET /api/locations/{locationId}/routes` | Auth `VIEWER` or `STAFF` | None | `200 OK` with the plain text `hello world`. This placeholder accepts a string for `locationId`. |
+| `GET /api/gyms/{gymId}/routes` | Staff assigned to the gym, a gym admin, or an admin of its organization | None | `200 OK` with an array of active routes, newest first. Each item includes `id`, `wallId`, `wallName`, `discipline`, `name`, `grade`, and `setAt`. |
 
 ### Access plans and member passes
 

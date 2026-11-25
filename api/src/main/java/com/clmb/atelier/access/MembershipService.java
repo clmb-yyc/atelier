@@ -75,7 +75,7 @@ public class MembershipService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public MemberPass issuePassAtGym(UUID actorId, UUID gymId, UUID planId, UUID memberId,
                                      Instant startsAt, Instant expiresAt) {
-        Gym gym = access.requireFrontDeskAccess(actorId, gymId);
+        Gym gym = access.requireGymStaffOrAdmin(actorId, gymId);
         return issuePassInScope(gym.getOrganizationId(), gymId, planId, memberId, startsAt, expiresAt);
     }
 

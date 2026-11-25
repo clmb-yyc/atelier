@@ -1,5 +1,17 @@
 package com.clmb.atelier;
 
+import com.clmb.atelier.gyms.Gym;
+import com.clmb.atelier.gyms.GymRepository;
+import com.clmb.atelier.gyms.GymStaff;
+import com.clmb.atelier.gyms.GymStaffRepository;
+import com.clmb.atelier.organizations.Organization;
+import com.clmb.atelier.organizations.OrganizationAdmin;
+import com.clmb.atelier.organizations.OrganizationAdminRepository;
+import com.clmb.atelier.organizations.OrganizationRepository;
+import com.clmb.atelier.routes.Route;
+import com.clmb.atelier.routes.RouteRepository;
+import com.clmb.atelier.walls.Wall;
+import com.clmb.atelier.walls.WallRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +37,6 @@ import java.util.UUID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -33,29 +44,62 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class AtelierApplicationTests {
-    private static final String ROUTES = "/api/locations/calgary/routes";
     private static final String AUTH_ISSUER = "clmb-auth";
 
     @Autowired MockMvc mvc;
     @Autowired JsonMapper json;
+    @Autowired OrganizationRepository organizations;
+    @Autowired OrganizationAdminRepository organizationAdmins;
+    @Autowired GymRepository gyms;
+    @Autowired GymStaffRepository gymStaff;
+    @Autowired WallRepository walls;
+    @Autowired RouteRepository routes;
     @Value("${atelier.jwt.secret}") String signingSecret;
 
     @Test
-    void acceptsViewerAndStaffTokensOnLocationReads() throws Exception {
-        for (String role : List.of("ROLE_VIEWER", "ROLE_STAFF")) {
-            mvc.perform(get(ROUTES).header("Authorization", "Bearer " + token(role)))
-                    .andExpect(status().isOk())
-                    .andExpect(content().string("hello world"));
-        }
-    }
+    void listsActiveRoutesAtTheRequestedGymWithScopedAccess() throws Exception {
+        UUID owner = UUID.randomUUID();
+        UUID employee = UUID.randomUUID();
+        UUID organization = organizations.save(new Organization("Climbing Co")).getId();
+        organizationAdmins.save(new OrganizationAdmin(organization, owner));
+        UUID gym = gyms.save(new Gym(organization, "Downtown")).getId();
+        UUID sibling = gyms.save(new Gym(organization, "North")).getId();
+        UUID empty = gyms.save(new Gym(organization, "South")).getId();
+        gymStaff.save(new GymStaff(gym, employee));
+        Wall active = walls.save(new Wall(gym, "Slab", Wall.Discipline.BOULDER));
+        Wall archived = new Wall(gym, "Old slab", Wall.Discipline.BOULDER);
+        Instant now = Instant.now();
+        archived.archive(now);
+        archived = walls.save(archived);
+        Wall siblingWall = walls.save(new Wall(sibling, "Rope wall", Wall.Discipline.ROPE));
+        Route older = routes.save(new Route(active.getId(), null, "V2", now.minusSeconds(360)));
+        Route newer = routes.save(new Route(active.getId(), "Slab start", "V4", now.minusSeconds(60)));
+        Route removed = new Route(active.getId(), "Removed", "V1", now.minusSeconds(300));
+        removed.remove(now);
+        routes.save(removed);
+        routes.save(new Route(archived.getId(), "Archived wall", "V3", now.minusSeconds(600)));
+        routes.save(new Route(siblingWall.getId(), "North only", "5.10a", now.minusSeconds(60)));
 
-    @Test
-    void requiresStaffForLocationWrites() throws Exception {
-        mvc.perform(post(ROUTES).header("Authorization", "Bearer " + token("ROLE_VIEWER")))
+        String staffToken = token("ROLE_VIEWER", employee);
+        String ownerToken = token("ROLE_STAFF", owner);
+        mvc.perform(get("/api/gyms/{gymId}/routes", gym).header("Authorization", "Bearer " + staffToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(newer.getId().toString()))
+                .andExpect(jsonPath("$[0].wallId").value(active.getId().toString()))
+                .andExpect(jsonPath("$[0].wallName").value("Slab"))
+                .andExpect(jsonPath("$[0].discipline").value("BOULDER"))
+                .andExpect(jsonPath("$[0].grade").value("V4"))
+                .andExpect(jsonPath("$[1].id").value(older.getId().toString()));
+        mvc.perform(get("/api/gyms/{gymId}/routes", gym).header("Authorization", "Bearer " + token("ROLE_STAFF")))
                 .andExpect(status().isForbidden());
-        // STAFF passes security and reaches MVC, where this endpoint only supports GET.
-        mvc.perform(post(ROUTES).header("Authorization", "Bearer " + token("ROLE_STAFF")))
-                .andExpect(status().isMethodNotAllowed());
+        mvc.perform(get("/api/gyms/{gymId}/routes", sibling).header("Authorization", "Bearer " + staffToken))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/gyms/{gymId}/routes", empty).header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+        mvc.perform(get("/api/gyms/{gymId}/routes", UUID.randomUUID())
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -67,9 +111,10 @@ class AtelierApplicationTests {
         key[0] ^= 1;
         String wrongSignature = token("ROLE_STAFF", AUTH_ISSUER, now, key);
 
-        mvc.perform(get(ROUTES)).andExpect(status().isUnauthorized());
+        String path = "/api/gyms/" + UUID.randomUUID() + "/routes";
+        mvc.perform(get(path)).andExpect(status().isUnauthorized());
         for (String invalid : List.of(wrongIssuer, expired, wrongSignature, "opaque-refresh-token")) {
-            mvc.perform(get(ROUTES).header("Authorization", "Bearer " + invalid))
+            mvc.perform(get(path).header("Authorization", "Bearer " + invalid))
                     .andExpect(status().isUnauthorized());
         }
     }

@@ -58,8 +58,6 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(requests -> requests
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/organizations").hasRole("STAFF")
-                        .requestMatchers(HttpMethod.GET, "/api/locations/**").hasAnyRole("VIEWER", "STAFF")
-                        .requestMatchers("/api/locations/**").hasRole("STAFF")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthentication)))

@@ -35,7 +35,7 @@ public class CheckInService {
         if (passId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "memberPassId is required");
         }
-        Gym gym = access.requireFrontDeskAccess(actorId, gymId);
+        Gym gym = access.requireGymStaffOrAdmin(actorId, gymId);
         // Hold the pass lock across the visit count and insert so two requests cannot use the final visit.
         MemberPass pass = passes.findInOrganizationForUpdate(passId, gym.getOrganizationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member pass not found"));

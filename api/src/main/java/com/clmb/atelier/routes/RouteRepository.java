@@ -1,7 +1,20 @@
 package com.clmb.atelier.routes;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.UUID;
 
-public interface RouteRepository extends JpaRepository<Route, UUID> {}
+public interface RouteRepository extends JpaRepository<Route, UUID> {
+    @Query("""
+            select new com.clmb.atelier.routes.RouteListItem(
+                route.id, wall.id, wall.name, wall.discipline, route.name, route.grade, route.setAt)
+            from Route route, Wall wall
+            where route.wallId = wall.id and wall.gymId = :gymId
+                and route.removedAt is null and wall.archivedAt is null
+            order by route.setAt desc, route.id
+            """)
+    List<RouteListItem> findActiveByGymId(@Param("gymId") UUID gymId);
+}

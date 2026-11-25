@@ -81,3 +81,5 @@ CREATE TABLE IF NOT EXISTS check_ins (
 
 CREATE INDEX IF NOT EXISTS check_ins_member_pass_id_idx ON check_ins (member_pass_id);
 CREATE INDEX IF NOT EXISTS member_passes_account_id_idx ON member_passes (account_id);
+CREATE INDEX IF NOT EXISTS walls_gym_id_idx ON walls (gym_id);
+CREATE INDEX IF NOT EXISTS routes_wall_id_idx ON routes (wall_id);
