@@ -1,0 +1,20 @@
+package com.clmb.atelier.gyms;
+
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
+
+import java.util.UUID;
+
+public interface GymAdminRepository extends Repository<GymAdmin, GymAdmin.Key> {
+    boolean existsById(GymAdmin.Key id);
+
+    @Modifying
+    @Query(value = """
+            INSERT INTO gym_admins (gym_id, account_id)
+            VALUES (:gymId, :accountId)
+            ON CONFLICT DO NOTHING
+            """, nativeQuery = true)
+    int grant(@Param("gymId") UUID gymId, @Param("accountId") UUID accountId);
+}

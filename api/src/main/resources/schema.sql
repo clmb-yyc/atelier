@@ -24,6 +24,12 @@ CREATE TABLE IF NOT EXISTS gym_staff (
     PRIMARY KEY (gym_id, account_id)
 );
 
+CREATE TABLE IF NOT EXISTS gym_admins (
+    gym_id UUID NOT NULL REFERENCES gyms(id),
+    account_id UUID NOT NULL,
+    PRIMARY KEY (gym_id, account_id)
+);
+
 CREATE TABLE IF NOT EXISTS walls (
     id UUID PRIMARY KEY,
     gym_id UUID NOT NULL REFERENCES gyms(id),
