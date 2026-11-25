@@ -1,3 +1,0 @@
-package com.clmb.atelier.auth;
-
-public record Credentials(String username, String password) {}
