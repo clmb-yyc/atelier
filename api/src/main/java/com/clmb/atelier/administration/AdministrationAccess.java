@@ -41,9 +41,10 @@ public class AdministrationAccess {
         return gym;
     }
 
-    public void requireOrganizationAdminForGym(UUID actorId, UUID gymId) {
+    public Gym requireOrganizationAdminForGym(UUID actorId, UUID gymId) {
         Gym gym = requireActiveGym(gymId);
         checkOrganizationAdmin(actorId, gym.getOrganizationId());
+        return gym;
     }
 
     public Gym requireGymStaffOrAdmin(UUID actorId, UUID gymId) {
@@ -54,11 +55,12 @@ public class AdministrationAccess {
         return gym;
     }
 
-    public void requireGymStaff(UUID actorId, UUID gymId) {
-        requireActiveGym(gymId);
+    public Gym requireGymStaff(UUID actorId, UUID gymId) {
+        Gym gym = requireActiveGym(gymId);
         if (!isGymStaff(actorId, gymId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Gym staff access required");
         }
+        return gym;
     }
 
     public void requireOrganizationAdmin(UUID actorId, UUID organizationId) {

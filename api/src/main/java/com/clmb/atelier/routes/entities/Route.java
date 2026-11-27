@@ -45,9 +45,6 @@ public class Route {
 
     private String style;
 
-    @Column(name = "difficulty_rating", nullable = false)
-    private Integer difficultyRating;
-
     @Column(name = "image_url")
     private String imageUrl;
 
@@ -60,7 +57,7 @@ public class Route {
     protected Route() {}
 
     public Route(UUID wallId, String name, UUID gradeId, Instant setAt, String colour, UUID setterId,
-                 String holdColour, int difficultyRating) {
+                 String holdColour) {
         this.wallId = wallId;
         this.name = name;
         this.gradeId = gradeId;
@@ -68,7 +65,6 @@ public class Route {
         this.colour = colour;
         this.setterId = setterId;
         this.holdColour = holdColour;
-        this.difficultyRating = difficultyRating;
         this.createdAt = Instant.now();
     }
 
@@ -142,14 +138,6 @@ public class Route {
 
     public void setStyle(String style) {
         this.style = style;
-    }
-
-    public Integer getDifficultyRating() {
-        return difficultyRating;
-    }
-
-    public void setDifficultyRating(Integer difficultyRating) {
-        this.difficultyRating = difficultyRating;
     }
 
     public String getImageUrl() {

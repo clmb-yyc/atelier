@@ -7,12 +7,12 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 | Table | Non-nullable fields | Nullable fields |
 | --- | --- | --- |
 | `organizations` | `id` (PK), `name`, `created_at` | `archived_at`, `description`, `slug`, `logo_url`, `website_url`, `contact_email` |
-| `gyms` | `id` (PK), `organization_id`, `name`, `address`, `city`, `postal_code`, `country`, `latitude`, `longitude`, `timezone`, `created_at` | `archived_at`, `description`, `phone_number`, `email`, `capacity` |
+| `gyms` | `id` (PK), `organization_id`, `name`, `address`, `city`, `postal_code`, `country`, `latitude`, `longitude`, `timezone`, `created_at` | `grading_system_id`, `archived_at`, `description`, `phone_number`, `email`, `capacity` |
 | `organization_admins` | `organization_id` and `user_id` (composite PK), `assigned_at`, `created_at` | `assigned_by` |
 | `gym_staff` | `gym_id` and `user_id` (composite PK), `assigned_at`, `created_at` | `assigned_by`, `job_title`, `employment_type` |
 | `walls` | `id` (PK), `gym_id`, `name`, `discipline` (`BOULDER` or `ROPE`), `created_at` | `archived_at`, `description`, `height_m`, `angle_degrees`, `location` |
-| `routes` | `id` (PK), `wall_id`, `grade_id`, `colour`, `setter_id`, `hold_colour`, `difficulty_rating` (integer), `set_at`, `created_at` | `name`, `removed_at`, `description`, `style`, `image_url`, `removal_reason` |
-| `grading_systems` | `id` (PK), `name`, `visibility` (`PUBLIC` or `PRIVATE`), `created_at` | `gym_id`, `description` |
+| `routes` | `id` (PK), `wall_id`, `grade_id`, `colour`, `setter_id`, `hold_colour`, `set_at`, `created_at` | `name`, `removed_at`, `description`, `style`, `image_url`, `removal_reason` |
+| `grading_systems` | `id` (PK), `name`, `visibility` (`PUBLIC` or `PRIVATE`), `created_at` | `gym_id`, `organization_id`, `description` |
 | `grades` | `id` (PK), `grading_system_id`, `label`, `sort_order`, `created_at` | `description` |
 | `passes` | `id` (PK), `organization_id`, `name`, `price`, `currency`, `is_renewable`, `created_at` | `gym_id`, `pass_type` (older passes), `valid_until`, `visit_limit` (integer), `archived_at`, `description`, `duration_days` |
 | `user_passes` | `id` (PK), `pass_id`, `user_id`, `starts_at`, `expires_at`, `purchased_at`, `issued_by`, `created_at` | `revoked_at`, `revoked_by`, `revocation_reason` |
@@ -21,8 +21,8 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 Atelier sets `created_at` automatically for new records.
 
 - An organization can operate multiple gyms. Organization admins manage all gyms in their organization. Staff assignments are scoped to a gym.
-- A route inherits its discipline from its wall and references a grade from a public system or a private system at that wall's gym. Archiving a wall preserves its routes.
-- Public grading systems are available at every gym and have a null `gym_id`. Private systems have a `gym_id` and are available only at that gym. Grades inherit their system's visibility and have a unique label within that system.
+- A route inherits its discipline from its wall and references a grade from a system available at that wall's gym. Archiving a wall preserves its routes.
+- A gym can select one grading system in its settings. Public systems are available at every gym and have null `gym_id` and `organization_id`. Private systems have an `organization_id`. A null `gym_id` makes the system available throughout that organization. A set `gym_id` limits it to that gym. Grades inherit their system's scope and have a unique label within that system.
 - A pass with no `gym_id` covers every gym in its organization. Each user pass has its own required expiry.
 - Archiving a pass closes it to new issuance. Existing user passes still reference it for scope and any visit limit.
 - Each check-in records one successful entry. The pass identifies the member. Count the pass's check-ins to calculate visits used.
@@ -41,18 +41,21 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | `PUT /api/organizations/{organizationId}/admins/{userId}` | Organization admin | None | `201 Created` for a new assignment, with `assigned_at` recorded by the server, or `204 No Content` if it already exists. Both have an empty body. |
 | `PUT /api/gyms/{gymId}/staff/{userId}` | Admin of the gym's organization | None | `201 Created` for a new assignment, with `assigned_at` recorded by the server, or `204 No Content` if it already exists. Both have an empty body. |
 | `POST /api/gyms/{gymId}/walls` | Admin of the gym's organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. The server records `created_at`. |
-| `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Admin of the gym's organization | `gradeId` (grade UUID), `colour`, `setterId` (user UUID), `holdColour`, `difficultyRating` (integer), optional `name` | `201 Created` with `id`, `wallId`, `name`, `gradeId`, `grade` (label), and `setAt`. A grade unavailable at the gym returns `404 Not Found`. |
+| `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Admin of the gym's organization | `gradeId` (grade UUID), `colour`, `setterId` (user UUID), `holdColour`, optional `name` | `201 Created` with `id`, `wallId`, `name`, `gradeId`, `grade` (label), and `setAt`. A grade unavailable at the gym returns `404 Not Found`. |
 | `GET /api/gyms/{gymId}/routes` | Staff assigned to the gym or an admin of its organization | None | `200 OK` with an array of active routes, newest first. Each item includes `id`, `wallId`, `wallName`, `discipline`, `name`, `gradeId`, `grade` (label), and `setAt`. |
 
 ### Grading settings
 
 | Method and path | Who can call it | Request body | Success response |
 | --- | --- | --- | --- |
-| `GET /api/gyms/{gymId}/grading-systems` | Staff assigned to the gym | None | `200 OK` with all public systems and the gym's private systems, ordered by name. Each system includes its grades, ordered by `sortOrder` and then `label`. |
-| `POST /api/gyms/{gymId}/grading-systems` | Staff assigned to the gym | `name`, optional `description` | `201 Created` with a private system and an empty `grades` array. |
-| `POST /api/gyms/{gymId}/grading-systems/{systemId}/grades` | Staff assigned to the gym | `label`, `sortOrder` (integer, zero or greater), optional `description` | `201 Created` with the grade. The system must be private and belong to the requested gym. A duplicate label in that system returns `409 Conflict`. |
+| `GET /api/gyms/{gymId}/grading-systems` | Staff assigned to the gym | None | `200 OK` with public, organization-wide, and gym-specific systems available to the gym, ordered by name. Each system includes its grades, ordered by `sortOrder` and then `label`. |
+| `GET /api/gyms/{gymId}/grading-system` | Staff assigned to the gym | None | `200 OK` with the gym's selected `gradingSystemId`, which is null until staff select a system. |
+| `PUT /api/gyms/{gymId}/grading-system` | Staff assigned to the gym | `gradingSystemId` | `200 OK` with the selected `gradingSystemId`. A system unavailable at the gym returns `404 Not Found`. |
+| `POST /api/gyms/{gymId}/grading-systems` | Staff assigned to the gym | `name`, optional `description` | `201 Created` with a private system for that gym and an empty `grades` array. |
+| `POST /api/gyms/{gymId}/grading-systems/shared` | Staff assigned to the gym | `name`, optional `description` | `201 Created` with a private system shared across the gym's organization and an empty `grades` array. |
+| `POST /api/gyms/{gymId}/grading-systems/{systemId}/grades` | Staff assigned to the gym | `label`, `sortOrder` (integer, zero or greater), optional `description` | `201 Created` with the grade. Staff can add grades to their gym's private systems and their organization's shared systems. A duplicate label in that system returns `409 Conflict`. |
 
-- A grading system returns `id`, `gymId`, `name`, `description`, `visibility`, `createdAt`, and `grades`.
+- A grading system returns `id`, `gymId`, `organizationId`, `name`, `description`, `visibility`, `createdAt`, and `grades`.
 - A grade returns `id`, `gradingSystemId`, `label`, `description`, `sortOrder`, and `createdAt`.
 
 ### Passes and user passes

@@ -5,8 +5,11 @@ import com.clmb.atelier.grading.dtos.GradeRequest;
 import com.clmb.atelier.grading.dtos.GradeResponse;
 import com.clmb.atelier.grading.dtos.GradingSystemRequest;
 import com.clmb.atelier.grading.dtos.GradingSystemResponse;
+import com.clmb.atelier.grading.dtos.GymGradingSystem;
 import com.clmb.atelier.grading.entities.Grade;
 import com.clmb.atelier.grading.entities.GradingSystem;
+import com.clmb.atelier.gyms.entities.Gym;
+import com.clmb.atelier.organizations.OrganizationRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,18 +26,21 @@ import static java.util.stream.Collectors.toList;
 public class GradingService {
     private final GradingSystemRepository systems;
     private final GradeRepository grades;
+    private final OrganizationRepository organizations;
     private final AdministrationAccess access;
 
-    public GradingService(GradingSystemRepository systems, GradeRepository grades, AdministrationAccess access) {
+    public GradingService(GradingSystemRepository systems, GradeRepository grades,
+                          OrganizationRepository organizations, AdministrationAccess access) {
         this.systems = systems;
         this.grades = grades;
+        this.organizations = organizations;
         this.access = access;
     }
 
     @Transactional(readOnly = true)
     public List<GradingSystemResponse> listSystems(UUID actorId, UUID gymId) {
-        access.requireGymStaff(actorId, gymId);
-        var available = systems.findByVisibilityOrGymIdOrderByNameAscIdAsc(GradingSystem.Visibility.PUBLIC, gymId);
+        var gym = access.requireGymStaff(actorId, gymId);
+        var available = systems.findAvailableAtGym(gymId, gym.getOrganizationId());
         if (available.isEmpty()) {
             return List.of();
         }
@@ -48,17 +54,44 @@ public class GradingService {
     }
 
     @Transactional
-    public GradingSystemResponse createSystem(UUID actorId, UUID gymId, GradingSystemRequest request) {
-        access.requireGymStaff(actorId, gymId);
-        var system = systems.save(new GradingSystem(gymId, requiredText(request.name(), "name"), request.description()));
+    public GradingSystemResponse createGymSystem(UUID actorId, UUID gymId, GradingSystemRequest request) {
+        return createSystem(access.requireGymStaff(actorId, gymId), gymId, request);
+    }
+
+    @Transactional
+    public GradingSystemResponse createSharedSystem(UUID actorId, UUID gymId, GradingSystemRequest request) {
+        return createSystem(access.requireGymStaff(actorId, gymId), null, request);
+    }
+
+    private GradingSystemResponse createSystem(Gym gym, UUID ownerGymId, GradingSystemRequest request) {
+        var organization = organizations.getReferenceById(gym.getOrganizationId());
+        var system = systems.save(new GradingSystem(ownerGymId, organization,
+                requiredText(request.name(), "name"), request.description()));
         return GradingSystemResponse.from(system, List.of());
+    }
+
+    @Transactional(readOnly = true)
+    public GymGradingSystem getSelectedSystem(UUID actorId, UUID gymId) {
+        return new GymGradingSystem(access.requireGymStaff(actorId, gymId).getGradingSystemId());
+    }
+
+    @Transactional
+    public GymGradingSystem selectSystem(UUID actorId, UUID gymId, UUID systemId) {
+        var gym = access.requireGymStaff(actorId, gymId);
+        if (systemId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "gradingSystemId is required");
+        }
+        var system = systems.findAvailableAtGym(systemId, gymId, gym.getOrganizationId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grading system not found at this gym"));
+        gym.selectGradingSystem(system);
+        return new GymGradingSystem(gym.getGradingSystemId());
     }
 
     @Transactional
     public GradeResponse addGrade(UUID actorId, UUID gymId, UUID systemId, GradeRequest request) {
-        access.requireGymStaff(actorId, gymId);
+        var gym = access.requireGymStaff(actorId, gymId);
         // Serialize additions to the same system so duplicate labels return a conflict on concurrent requests.
-        systems.findByIdAndGymId(systemId, gymId)
+        systems.findEditableAtGym(systemId, gymId, gym.getOrganizationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Private grading system not found"));
         String label = requiredText(request.label(), "label");
         if (request.sortOrder() == null || request.sortOrder() < 0) {

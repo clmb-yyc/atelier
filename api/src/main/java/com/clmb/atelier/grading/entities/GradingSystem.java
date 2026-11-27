@@ -1,12 +1,16 @@
 package com.clmb.atelier.grading.entities;
 
+import com.clmb.atelier.organizations.entities.Organization;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
@@ -26,6 +30,10 @@ public class GradingSystem {
     @Column(name = "gym_id")
     private UUID gymId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", updatable = false)
+    private Organization organization;
+
     @Column(nullable = false)
     private String name;
 
@@ -41,8 +49,9 @@ public class GradingSystem {
 
     protected GradingSystem() {}
 
-    public GradingSystem(UUID gymId, String name, String description) {
+    public GradingSystem(UUID gymId, Organization organization, String name, String description) {
         this.gymId = gymId;
+        this.organization = organization;
         this.name = name;
         this.description = description;
         this.visibility = Visibility.PRIVATE;
@@ -55,6 +64,10 @@ public class GradingSystem {
 
     public UUID getGymId() {
         return gymId;
+    }
+
+    public UUID getOrganizationId() {
+        return organization == null ? null : organization.getId();
     }
 
     public String getName() {

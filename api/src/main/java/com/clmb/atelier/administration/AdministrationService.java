@@ -1,7 +1,6 @@
 package com.clmb.atelier.administration;
 
 import com.clmb.atelier.grading.GradeRepository;
-import com.clmb.atelier.grading.entities.GradingSystem;
 import com.clmb.atelier.gyms.GymRepository;
 import com.clmb.atelier.gyms.GymStaffRepository;
 import com.clmb.atelier.gyms.entities.Gym;
@@ -92,19 +91,19 @@ public class AdministrationService {
     }
 
     public RouteResponse createRoute(UUID actorId, UUID gymId, UUID wallId, RouteRequest request) {
-        access.requireOrganizationAdminForGym(actorId, gymId);
+        Gym gym = access.requireOrganizationAdminForGym(actorId, gymId);
         walls.findByIdAndGymIdAndArchivedAtIsNull(wallId, gymId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wall not found in this gym"));
-        if (request.gradeId() == null || request.setterId() == null || request.difficultyRating() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "gradeId, setterId and difficultyRating are required");
+        if (request.gradeId() == null || request.setterId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "gradeId and setterId are required");
         }
-        var grade = grades.findAvailableAtGym(request.gradeId(), gymId, GradingSystem.Visibility.PUBLIC)
+        var grade = grades.findAvailableAtGym(request.gradeId(), gymId, gym.getOrganizationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grade not found at this gym"));
         String name = request.name();
         String routeName = name == null || name.isBlank() ? null : name.strip();
         Route route = routes.save(new Route(wallId, routeName, grade.getId(), Instant.now(),
                 requiredText(request.colour(), "colour"), request.setterId(),
-                requiredText(request.holdColour(), "holdColour"), request.difficultyRating()));
+                requiredText(request.holdColour(), "holdColour")));
         return new RouteResponse(route.getId(), route.getWallId(), route.getName(), route.getGradeId(),
                 grade.getLabel(), route.getSetAt());
     }

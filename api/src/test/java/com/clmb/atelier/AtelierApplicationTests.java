@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -76,17 +77,17 @@ class AtelierApplicationTests {
         archived = walls.save(archived);
         Wall siblingWall = walls.save(new Wall(sibling, "Rope wall", Wall.Discipline.ROPE));
         Route older = routes.save(new Route(active.getId(), null, gradeId("V2"), now.minusSeconds(360),
-                "Blue", owner, "Blue", 2));
+                "Blue", owner, "Blue"));
         Route newer = routes.save(new Route(active.getId(), "Slab start", gradeId("V4"), now.minusSeconds(60),
-                "Blue", owner, "Blue", 4));
+                "Blue", owner, "Blue"));
         Route removed = new Route(active.getId(), "Removed", gradeId("V1"), now.minusSeconds(300),
-                "Blue", owner, "Blue", 1);
+                "Blue", owner, "Blue");
         removed.remove(now);
         routes.save(removed);
         routes.save(new Route(archived.getId(), "Archived wall", gradeId("V3"), now.minusSeconds(600),
-                "Blue", owner, "Blue", 3));
+                "Blue", owner, "Blue"));
         routes.save(new Route(siblingWall.getId(), "North only", gradeId("V4"), now.minusSeconds(60),
-                "Blue", owner, "Blue", 4));
+                "Blue", owner, "Blue"));
 
         String staffToken = token("ROLE_VIEWER", employee);
         String ownerToken = token("ROLE_STAFF", owner);
@@ -186,7 +187,7 @@ class AtelierApplicationTests {
 
         String publicGradeId = gradeId("V4").toString();
         String routeRequest = """
-                {"gradeId":"%s","colour":"Blue","setterId":"%s","holdColour":"Blue","difficultyRating":4}
+                {"gradeId":"%s","colour":"Blue","setterId":"%s","holdColour":"Blue"}
                 """.formatted(publicGradeId, organizationAdminId);
         String routePath = gymWallsPath + "/" + wallId + "/routes";
         postJson(routePath, organizationAdmin, routeRequest.replace('"' + publicGradeId + '"', "null"))
@@ -198,7 +199,6 @@ class AtelierApplicationTests {
         Route route = routes.findById(UUID.fromString(routeId)).orElseThrow();
         assertThat(route.getGradeId()).isEqualTo(UUID.fromString(publicGradeId));
         assertThat(route.getSetterId()).isEqualTo(organizationAdminId);
-        assertThat(route.getDifficultyRating()).isEqualTo(4);
         postJson(gymWallsPath + "/" + siblingWallId + "/routes", organizationAdmin, routeRequest)
                 .andExpect(status().isNotFound());
         postJson(routePath, organizationAdmin, routeRequest.replace(publicGradeId, UUID.randomUUID().toString()))
@@ -212,10 +212,21 @@ class AtelierApplicationTests {
                 .andExpect(jsonPath("$.grade").value("Red Circuit"));
         postJson("/api/gyms/" + siblingGymId + "/walls/" + siblingWallId + "/routes", organizationAdmin, privateRoute)
                 .andExpect(status().isNotFound());
+
+        String sharedSystemId = createdId(postJson(gradingPath(gymId) + "/shared", employee,
+                "{\"name\":\"Shared Circuit\"}"));
+        String sharedGradeId = createdId(postJson(gradingPath(gymId) + "/" + sharedSystemId + "/grades", employee,
+                "{\"label\":\"Shared Red\",\"sortOrder\":1}"));
+        String sharedRoute = routeRequest.replace(publicGradeId, sharedGradeId);
+        postJson("/api/gyms/" + siblingGymId + "/walls/" + siblingWallId + "/routes", organizationAdmin, sharedRoute)
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.grade").value("Shared Red"));
+        String otherWallId = createdId(postJson("/api/gyms/" + otherGymId + "/walls", otherStaff, wall));
+        postJson("/api/gyms/" + otherGymId + "/walls/" + otherWallId + "/routes", otherStaff, sharedRoute)
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void sharesPublicGradesAndRestrictsPrivateSystemsToTheirGym() throws Exception {
+    void scopesGradingSystemsToThePublicOrganizationOrGym() throws Exception {
         String admin = token("ROLE_STAFF");
         String otherAdmin = token("ROLE_STAFF");
         UUID staffId = UUID.randomUUID();
@@ -233,6 +244,7 @@ class AtelierApplicationTests {
         String body = mvc.perform(get(path).header("Authorization", "Bearer " + staff))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Fontainebleau"))
+                .andExpect(jsonPath("$[0].organizationId").value(nullValue()))
                 .andExpect(jsonPath("$[1].name").value("V-scale"))
                 .andExpect(jsonPath("$[1].grades[10].label").value("V9"))
                 .andExpect(jsonPath("$[1].grades[11].label").value("V10"))
@@ -245,6 +257,7 @@ class AtelierApplicationTests {
         mvc.perform(get(path).header("Authorization", "Bearer " + otherAdmin)).andExpect(status().isForbidden());
         String systemId = createdId(postJson(path, staff, request)
                 .andExpect(jsonPath("$.visibility").value("PRIVATE"))
+                .andExpect(jsonPath("$.organizationId").value(org))
                 .andExpect(jsonPath("$.gymId").value(gym)));
         String grade = "{\"label\":\"Red\",\"sortOrder\":2}";
         postJson(path + "/" + systemId + "/grades", admin, grade).andExpect(status().isForbidden());
@@ -265,6 +278,41 @@ class AtelierApplicationTests {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
         mvc.perform(get(gradingPath(otherGym)).header("Authorization", "Bearer " + staff))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+
+        String selectedPath = "/api/gyms/" + gym + "/grading-system";
+        mvc.perform(get(selectedPath).header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.gradingSystemId").value(nullValue()));
+        selectGradingSystem(gym, admin, publicId).andExpect(status().isForbidden());
+        selectGradingSystem(gym, staff, publicId).andExpect(status().isOk())
+                .andExpect(jsonPath("$.gradingSystemId").value(publicId));
+        selectGradingSystem(sibling, staff, systemId).andExpect(status().isNotFound());
+        selectGradingSystem(otherGym, staff, systemId).andExpect(status().isNotFound());
+        selectGradingSystem(gym, staff, systemId).andExpect(status().isOk());
+        mvc.perform(get(selectedPath).header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.gradingSystemId").value(systemId));
+
+        postJson(path + "/shared", admin, "{\"name\":\"Shared\"}").andExpect(status().isForbidden());
+        String sharedSystemId = createdId(postJson(path + "/shared", staff, "{\"name\":\"Shared\"}")
+                .andExpect(jsonPath("$.visibility").value("PRIVATE"))
+                .andExpect(jsonPath("$.organizationId").value(org))
+                .andExpect(jsonPath("$.gymId").value(nullValue())));
+        String siblingPath = gradingPath(sibling);
+        postJson(siblingPath + "/" + sharedSystemId + "/grades", staff, grade).andExpect(status().isCreated());
+        postJson(gradingPath(otherGym) + "/" + sharedSystemId + "/grades", staff, grade)
+                .andExpect(status().isNotFound());
+        selectGradingSystem(sibling, staff, sharedSystemId).andExpect(status().isOk());
+        selectGradingSystem(otherGym, staff, sharedSystemId).andExpect(status().isNotFound());
+        mvc.perform(get(siblingPath).header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[1].id").value(sharedSystemId))
+                .andExpect(jsonPath("$[1].grades[0].label").value("Red"));
+        mvc.perform(get(gradingPath(otherGym)).header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+    }
+
+    private ResultActions selectGradingSystem(String gymId, String token, String systemId) throws Exception {
+        return mvc.perform(put("/api/gyms/{gymId}/grading-system", gymId).header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"gradingSystemId\":\"" + systemId + "\"}"));
     }
 
     private UUID gradeId(String label) {

@@ -63,7 +63,7 @@ class PersistenceTests {
         UUID gradeId = grades.findAll().stream().filter(grade -> grade.getLabel().equals("V4")).findFirst()
                 .orElseThrow().getId();
         Route route = routes.save(new Route(wall.getId(), null, gradeId, NOW, "Blue", employee.getId().userId(),
-                "Blue", 4));
+                "Blue"));
         Pass plan = plans.save(new Pass(organization.getId(), gym.getId(), "10 visits",
                 Pass.PassType.VISIT_PASS, null, 10, BigDecimal.TEN, "CAD", false));
         UserPass pass = passes.save(new UserPass(plan.getId(), memberId, NOW, NOW.plusSeconds(3600),
