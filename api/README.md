@@ -2,7 +2,8 @@
 
 Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, timestamps use `timestamptz`, and user IDs refer to users in the Auth service. A null `archived_at` means the record has yet to be archived.
 
-<img width="966" height="745" alt="atelier-db" src="https://github.com/user-attachments/assets/1e552b88-3958-47ad-9381-6d66af58f50e" />
+<img width="1246" height="881" alt="atelier-db" src="https://github.com/user-attachments/assets/712b862a-3ec8-4ffc-82a7-021112c606ca" />
+
 
 | Table | Non-nullable fields | Nullable fields |
 | --- | --- | --- |
