@@ -32,10 +32,10 @@ public class UserPass {
     @Column(name = "revoked_at")
     private Instant revokedAt;
 
-    @Column(name = "purchased_at")
+    @Column(name = "purchased_at", nullable = false)
     private Instant purchasedAt;
 
-    @Column(name = "issued_by")
+    @Column(name = "issued_by", nullable = false)
     private UUID issuedBy;
 
     @Column(name = "revoked_by")
@@ -46,11 +46,14 @@ public class UserPass {
 
     protected UserPass() {}
 
-    public UserPass(UUID passId, UUID userId, Instant startsAt, Instant expiresAt) {
+    public UserPass(UUID passId, UUID userId, Instant startsAt, Instant expiresAt, Instant purchasedAt,
+                    UUID issuedBy) {
         this.passId = passId;
         this.userId = userId;
         this.startsAt = startsAt;
         this.expiresAt = expiresAt;
+        this.purchasedAt = purchasedAt;
+        this.issuedBy = issuedBy;
     }
 
     public UUID getId() {

@@ -2,7 +2,6 @@ package com.clmb.atelier;
 
 import com.clmb.atelier.gyms.GymRepository;
 import com.clmb.atelier.gyms.GymStaffRepository;
-import com.clmb.atelier.gyms.entities.Gym;
 import com.clmb.atelier.gyms.entities.GymStaff;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
 import com.clmb.atelier.organizations.OrganizationRepository;
@@ -34,6 +33,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -62,9 +62,9 @@ class AtelierApplicationTests {
         UUID employee = UUID.randomUUID();
         UUID organization = organizations.save(new Organization("Climbing Co")).getId();
         organizationAdmins.save(new OrganizationAdmin(organization, owner));
-        UUID gym = gyms.save(new Gym(organization, "Downtown")).getId();
-        UUID sibling = gyms.save(new Gym(organization, "North")).getId();
-        UUID empty = gyms.save(new Gym(organization, "South")).getId();
+        UUID gym = gyms.save(GymFixtures.gym(organization, "Downtown")).getId();
+        UUID sibling = gyms.save(GymFixtures.gym(organization, "North")).getId();
+        UUID empty = gyms.save(GymFixtures.gym(organization, "South")).getId();
         gymStaff.save(new GymStaff(gym, employee));
         Wall active = walls.save(new Wall(gym, "Slab", Wall.Discipline.BOULDER));
         Wall archived = new Wall(gym, "Old slab", Wall.Discipline.BOULDER);
@@ -72,13 +72,18 @@ class AtelierApplicationTests {
         archived.archive(now);
         archived = walls.save(archived);
         Wall siblingWall = walls.save(new Wall(sibling, "Rope wall", Wall.Discipline.ROPE));
-        Route older = routes.save(new Route(active.getId(), null, "V2", now.minusSeconds(360)));
-        Route newer = routes.save(new Route(active.getId(), "Slab start", "V4", now.minusSeconds(60)));
-        Route removed = new Route(active.getId(), "Removed", "V1", now.minusSeconds(300));
+        Route older = routes.save(new Route(active.getId(), null, "V2", now.minusSeconds(360),
+                "Blue", owner, "Blue", 2));
+        Route newer = routes.save(new Route(active.getId(), "Slab start", "V4", now.minusSeconds(60),
+                "Blue", owner, "Blue", 4));
+        Route removed = new Route(active.getId(), "Removed", "V1", now.minusSeconds(300),
+                "Blue", owner, "Blue", 1);
         removed.remove(now);
         routes.save(removed);
-        routes.save(new Route(archived.getId(), "Archived wall", "V3", now.minusSeconds(600)));
-        routes.save(new Route(siblingWall.getId(), "North only", "5.10a", now.minusSeconds(60)));
+        routes.save(new Route(archived.getId(), "Archived wall", "V3", now.minusSeconds(600),
+                "Blue", owner, "Blue", 3));
+        routes.save(new Route(siblingWall.getId(), "North only", "5.10a", now.minusSeconds(60),
+                "Blue", owner, "Blue", 4));
 
         String staffToken = token("ROLE_VIEWER", employee);
         String ownerToken = token("ROLE_STAFF", owner);
@@ -142,15 +147,23 @@ class AtelierApplicationTests {
         String organizationId = createdId(postJson("/api/organizations", creator, "{\"name\":\"Climbing Co\"}"));
         String otherOrganizationId = createdId(postJson("/api/organizations", otherStaff, "{\"name\":\"Other Co\"}"));
         String gymsPath = "/api/organizations/" + organizationId + "/gyms";
-        postJson(gymsPath, otherStaff, "{\"name\":\"Unauthorized\"}").andExpect(status().isForbidden());
+        postJson(gymsPath, otherStaff, gymRequest("Unauthorized")).andExpect(status().isForbidden());
+        postJson(gymsPath, creator, "{\"name\":\"Missing address and coordinates\"}")
+                .andExpect(status().isBadRequest());
+        postJson(gymsPath, creator, gymRequest("Missing address").replace("\"100 Main St\"", "null"))
+                .andExpect(status().isBadRequest());
 
         String orgAdminPath = "/api/organizations/" + organizationId + "/admins/" + organizationAdminId;
         grant(orgAdminPath, creator).andExpect(status().isCreated());
+        var adminKey = new OrganizationAdmin.Key(UUID.fromString(organizationId), organizationAdminId);
+        Instant assignedAt = organizationAdmins.findById(adminKey).orElseThrow().getAssignedAt();
+        assertThat(assignedAt).isNotNull();
         grant(orgAdminPath, creator).andExpect(status().isNoContent());
-        String gymId = createdId(postJson(gymsPath, organizationAdmin, "{\"name\":\"Downtown\"}"));
-        String siblingGymId = createdId(postJson(gymsPath, creator, "{\"name\":\"North\"}"));
+        assertThat(organizationAdmins.findById(adminKey).orElseThrow().getAssignedAt()).isEqualTo(assignedAt);
+        String gymId = createdId(postJson(gymsPath, organizationAdmin, gymRequest("Downtown")));
+        String siblingGymId = createdId(postJson(gymsPath, creator, gymRequest("North")));
         String otherGymId = createdId(postJson("/api/organizations/" + otherOrganizationId + "/gyms",
-                otherStaff, "{\"name\":\"West\"}"));
+                otherStaff, gymRequest("West")));
 
         grant("/api/gyms/" + gymId + "/admins/" + employeeId, organizationAdmin).andExpect(status().isNotFound());
         String gymStaffPath = "/api/gyms/" + gymId + "/staff/" + employeeId;
@@ -167,14 +180,28 @@ class AtelierApplicationTests {
         postJson(gymWallsPath, employee, wall).andExpect(status().isForbidden());
         postJson("/api/gyms/" + otherGymId + "/walls", organizationAdmin, wall).andExpect(status().isForbidden());
 
-        postJson(gymWallsPath + "/" + wallId + "/routes", organizationAdmin, "{\"grade\":\"V4\"}")
-                .andExpect(status().isCreated())
+        String routeRequest = """
+                {"grade":"V4","colour":"Blue","setterId":"%s","holdColour":"Blue","difficultyRating":4}
+                """.formatted(organizationAdminId);
+        String routePath = gymWallsPath + "/" + wallId + "/routes";
+        postJson(routePath, organizationAdmin, "{\"grade\":\"V4\"}").andExpect(status().isBadRequest());
+        String routeId = createdId(postJson(routePath, organizationAdmin, routeRequest)
                 .andExpect(jsonPath("$.wallId").value(wallId))
-                .andExpect(jsonPath("$.grade").value("V4"));
-        postJson(gymWallsPath + "/" + siblingWallId + "/routes", organizationAdmin, "{\"grade\":\"V4\"}")
+                .andExpect(jsonPath("$.grade").value("V4")));
+        Route route = routes.findById(UUID.fromString(routeId)).orElseThrow();
+        assertThat(route.getSetterId()).isEqualTo(organizationAdminId);
+        assertThat(route.getDifficultyRating()).isEqualTo(4);
+        postJson(gymWallsPath + "/" + siblingWallId + "/routes", organizationAdmin, routeRequest)
                 .andExpect(status().isNotFound());
-        postJson(gymWallsPath + "/" + wallId + "/routes", organizationAdmin, "{\"grade\":\" \"}")
+        postJson(routePath, organizationAdmin, routeRequest.replace("V4", " "))
                 .andExpect(status().isBadRequest());
+    }
+
+    private static String gymRequest(String name) {
+        return """
+                {"name":"%s","address":"100 Main St","city":"Calgary","postalCode":"T2P 1J9",
+                 "country":"CA","latitude":51.05,"longitude":-114.07,"timezone":"America/Edmonton"}
+                """.formatted(name);
     }
 
     private ResultActions postJson(String path, String token, String body) throws Exception {

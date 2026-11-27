@@ -36,8 +36,7 @@ public class PassController {
     @ResponseStatus(HttpStatus.CREATED)
     public PassResponse createPass(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
                                    @RequestBody PassRequest request) {
-        return PassResponse.from(passes.createPass(userId(jwt), organizationId, request.name(),
-                request.gymId(), request.passType(), request.validUntil(), request.visitLimit()));
+        return PassResponse.from(passes.createPass(userId(jwt), organizationId, request));
     }
 
     @GetMapping("/organizations/{organizationId}/passes")

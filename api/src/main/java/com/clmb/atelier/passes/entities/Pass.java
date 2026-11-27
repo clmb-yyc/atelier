@@ -47,31 +47,35 @@ public class Pass {
     @Column(columnDefinition = "text")
     private String description;
 
-    @Column(precision = 19, scale = 4)
+    @Column(precision = 19, scale = 4, nullable = false)
     private BigDecimal price;
 
-    @Column(length = 3)
+    @Column(length = 3, nullable = false)
     private String currency;
 
     @Column(name = "duration_days")
     private Integer durationDays;
 
-    @Column(name = "is_renewable")
+    @Column(name = "is_renewable", nullable = false)
     private Boolean isRenewable;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     protected Pass() {}
 
     public Pass(UUID organizationId, UUID gymId, String name, PassType passType, Instant validUntil,
-                      Integer visitLimit) {
+                Integer visitLimit, BigDecimal price, String currency, boolean isRenewable) {
         this.organizationId = organizationId;
         this.gymId = gymId;
         this.name = name;
         this.passType = passType;
         this.validUntil = validUntil;
         this.visitLimit = visitLimit;
+        this.price = price;
+        this.currency = currency;
+        this.isRenewable = isRenewable;
+        this.createdAt = Instant.now();
     }
 
     public UUID getId() {

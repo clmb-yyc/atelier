@@ -26,6 +26,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -52,16 +53,18 @@ class PersistenceTests {
     @Test
     void archivingPreservesRoutesPassesAndCheckInHistory() {
         Organization organization = organizations.save(new Organization("Climbing Co"));
-        Gym gym = gyms.save(new Gym(organization.getId(), "Downtown"));
+        Gym gym = gyms.save(GymFixtures.gym(organization.getId(), "Downtown"));
         UUID memberId = UUID.randomUUID();
         var admin = admins.save(new OrganizationAdmin(organization.getId(), UUID.randomUUID()));
         var employee = staff.save(new GymStaff(gym.getId(), UUID.randomUUID()));
         Wall wall = walls.save(new Wall(gym.getId(), "Slab", Wall.Discipline.BOULDER));
-        Route route = routes.save(new Route(wall.getId(), null, "V4", NOW));
+        Route route = routes.save(new Route(wall.getId(), null, "V4", NOW, "Blue", employee.getId().userId(),
+                "Blue", 4));
         Pass plan = plans.save(new Pass(organization.getId(), gym.getId(), "10 visits",
-                Pass.PassType.VISIT_PASS, null, 10));
-        UserPass pass = passes.save(new UserPass(plan.getId(), memberId, NOW, NOW.plusSeconds(3600)));
-        checkIns.save(new CheckIn(gym.getId(), pass.getId(), NOW));
+                Pass.PassType.VISIT_PASS, null, 10, BigDecimal.TEN, "CAD", false));
+        UserPass pass = passes.save(new UserPass(plan.getId(), memberId, NOW, NOW.plusSeconds(3600),
+                NOW, employee.getId().userId()));
+        checkIns.save(new CheckIn(gym.getId(), pass.getId(), NOW, employee.getId().userId()));
 
         wall.archive(NOW);
         plan.archive(NOW);
@@ -85,10 +88,10 @@ class PersistenceTests {
     void rejectsAPassForAnotherOrganizationsGym() {
         Organization first = organizations.save(new Organization("Climbing Co"));
         Organization second = organizations.save(new Organization("Another Gym Co"));
-        Gym gym = gyms.save(new Gym(second.getId(), "Downtown"));
+        Gym gym = gyms.save(GymFixtures.gym(second.getId(), "Downtown"));
 
         assertThatThrownBy(() -> plans.saveAndFlush(new Pass(first.getId(), gym.getId(), "10 visits",
-                Pass.PassType.VISIT_PASS, null, 10)))
+                Pass.PassType.VISIT_PASS, null, 10, BigDecimal.TEN, "CAD", false)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

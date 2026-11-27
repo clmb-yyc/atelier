@@ -29,7 +29,7 @@ public class CheckIn {
     @Column(name = "checked_out_at")
     private Instant checkedOutAt;
 
-    @Column(name = "checked_in_by")
+    @Column(name = "checked_in_by", nullable = false)
     private UUID checkedInBy;
 
     @Column(name = "voided_at")
@@ -37,10 +37,11 @@ public class CheckIn {
 
     protected CheckIn() {}
 
-    public CheckIn(UUID gymId, UUID userPassId, Instant checkedInAt) {
+    public CheckIn(UUID gymId, UUID userPassId, Instant checkedInAt, UUID checkedInBy) {
         this.gymId = gymId;
         this.userPassId = userPassId;
         this.checkedInAt = checkedInAt;
+        this.checkedInBy = checkedInBy;
     }
 
     public UUID getId() {

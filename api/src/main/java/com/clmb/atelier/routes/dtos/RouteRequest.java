@@ -1,3 +1,6 @@
 package com.clmb.atelier.routes.dtos;
 
-public record RouteRequest(String name, String grade) {}
+import java.util.UUID;
+
+public record RouteRequest(String name, String grade, String colour, UUID setterId, String holdColour,
+                           Integer difficultyRating) {}

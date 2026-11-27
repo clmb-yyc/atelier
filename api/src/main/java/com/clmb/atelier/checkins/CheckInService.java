@@ -54,6 +54,6 @@ public class CheckInService {
         if (pass.getVisitLimit() != null && checkIns.countByUserPassId(userPassId) >= pass.getVisitLimit()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User pass has no visits remaining");
         }
-        return checkIns.save(new CheckIn(gymId, userPassId, now));
+        return checkIns.save(new CheckIn(gymId, userPassId, now, actorId));
     }
 }

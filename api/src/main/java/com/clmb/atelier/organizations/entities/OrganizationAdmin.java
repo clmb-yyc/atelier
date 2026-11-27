@@ -21,7 +21,7 @@ public class OrganizationAdmin {
     @EmbeddedId
     private Key id;
 
-    @Column(name = "assigned_at")
+    @Column(name = "assigned_at", nullable = false)
     private Instant assignedAt;
 
     @Column(name = "assigned_by")
@@ -31,6 +31,7 @@ public class OrganizationAdmin {
 
     public OrganizationAdmin(UUID organizationId, UUID userId) {
         id = new Key(organizationId, userId);
+        assignedAt = Instant.now();
     }
 
     public Key getId() {

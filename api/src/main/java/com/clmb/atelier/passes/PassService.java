@@ -3,6 +3,7 @@ package com.clmb.atelier.passes;
 import com.clmb.atelier.administration.AdministrationAccess;
 import com.clmb.atelier.gyms.entities.Gym;
 import com.clmb.atelier.organizations.OrganizationRepository;
+import com.clmb.atelier.passes.dtos.PassRequest;
 import com.clmb.atelier.passes.entities.Pass;
 import com.clmb.atelier.passes.entities.UserPass;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -31,25 +33,39 @@ public class PassService {
     }
 
     @Transactional
-    public Pass createPass(UUID actorId, UUID organizationId, String name, UUID gymId,
-                                 Pass.PassType passType, Instant validUntil, Integer visitLimit) {
+    public Pass createPass(UUID actorId, UUID organizationId, PassRequest request) {
         access.requireOrganizationAdmin(actorId, organizationId);
+        String name = request.name();
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name is required");
         }
-        if (passType == null) {
+        if (request.passType() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "passType is required");
         }
+        Integer visitLimit = request.visitLimit();
         if (visitLimit != null && visitLimit <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "visitLimit must be positive");
         }
+        Instant validUntil = request.validUntil();
         if (validUntil != null && !validUntil.isAfter(Instant.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "validUntil must be in the future");
         }
+        UUID gymId = request.gymId();
         if (gymId != null && !access.requireActiveGym(gymId).getOrganizationId().equals(organizationId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Gym not found in this organization");
         }
-        return passes.save(new Pass(organizationId, gymId, name.strip(), passType, validUntil, visitLimit));
+        if (request.price() == null || request.price().signum() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "price must be zero or greater");
+        }
+        String currency = request.currency();
+        if (currency == null || !currency.strip().matches("[A-Za-z]{3}")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "currency must be a three-letter code");
+        }
+        if (request.isRenewable() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "isRenewable is required");
+        }
+        return passes.save(new Pass(organizationId, gymId, name.strip(), request.passType(), validUntil, visitLimit,
+                request.price(), currency.strip().toUpperCase(Locale.ROOT), request.isRenewable()));
     }
 
     @Transactional(readOnly = true)
@@ -71,18 +87,18 @@ public class PassService {
     public UserPass issueUserPass(UUID actorId, UUID organizationId, UUID passId, UUID memberId,
                                 Instant startsAt, Instant expiresAt) {
         access.requireOrganizationAdmin(actorId, organizationId);
-        return issueUserPassInScope(organizationId, null, passId, memberId, startsAt, expiresAt);
+        return issueUserPassInScope(actorId, organizationId, null, passId, memberId, startsAt, expiresAt);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public UserPass issueUserPassAtGym(UUID actorId, UUID gymId, UUID passId, UUID memberId,
                                      Instant startsAt, Instant expiresAt) {
         Gym gym = access.requireGymStaffOrAdmin(actorId, gymId);
-        return issueUserPassInScope(gym.getOrganizationId(), gymId, passId, memberId, startsAt, expiresAt);
+        return issueUserPassInScope(actorId, gym.getOrganizationId(), gymId, passId, memberId, startsAt, expiresAt);
     }
 
-    private UserPass issueUserPassInScope(UUID organizationId, UUID gymId, UUID passId, UUID memberId,
-                                        Instant startsAt, Instant expiresAt) {
+    private UserPass issueUserPassInScope(UUID actorId, UUID organizationId, UUID gymId, UUID passId, UUID memberId,
+                                         Instant startsAt, Instant expiresAt) {
         // Issuance can conflict across different passes in the same organization.
         organizations.findForUpdate(organizationId).orElseThrow();
         Pass pass = lockPass(organizationId, passId);
@@ -102,7 +118,7 @@ public class PassService {
                     "userId is required and expiresAt must be after startsAt and in the future");
         }
         requireCompatiblePasses(pass, memberId, start.isBefore(now) ? now : start, expiresAt);
-        return userPasses.save(new UserPass(pass.getId(), memberId, start, expiresAt));
+        return userPasses.save(new UserPass(pass.getId(), memberId, start, expiresAt, now, actorId));
     }
 
     @Transactional

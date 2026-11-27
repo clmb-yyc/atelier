@@ -52,7 +52,7 @@ public class RoutesController {
     @ResponseStatus(HttpStatus.CREATED)
     public RouteResponse createRoute(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,
                                      @PathVariable UUID wallId, @RequestBody RouteRequest request) {
-        Route route = administration.createRoute(userId(jwt), gymId, wallId, request.name(), request.grade());
+        Route route = administration.createRoute(userId(jwt), gymId, wallId, request);
         return new RouteResponse(route.getId(), route.getWallId(), route.getName(), route.getGrade(), route.getSetAt());
     }
 }

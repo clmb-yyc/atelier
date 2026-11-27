@@ -34,17 +34,18 @@ public class Route {
     @Column(columnDefinition = "text")
     private String description;
 
+    @Column(nullable = false)
     private String colour;
 
-    @Column(name = "setter_id")
+    @Column(name = "setter_id", nullable = false)
     private UUID setterId;
 
-    @Column(name = "hold_colour")
+    @Column(name = "hold_colour", nullable = false)
     private String holdColour;
 
     private String style;
 
-    @Column(name = "difficulty_rating")
+    @Column(name = "difficulty_rating", nullable = false)
     private Integer difficultyRating;
 
     @Column(name = "image_url")
@@ -55,11 +56,16 @@ public class Route {
 
     protected Route() {}
 
-    public Route(UUID wallId, String name, String grade, Instant setAt) {
+    public Route(UUID wallId, String name, String grade, Instant setAt, String colour, UUID setterId,
+                 String holdColour, int difficultyRating) {
         this.wallId = wallId;
         this.name = name;
         this.grade = grade;
         this.setAt = setAt;
+        this.colour = colour;
+        this.setterId = setterId;
+        this.holdColour = holdColour;
+        this.difficultyRating = difficultyRating;
     }
 
     public UUID getId() {

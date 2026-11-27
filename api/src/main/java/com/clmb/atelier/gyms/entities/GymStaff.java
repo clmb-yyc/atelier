@@ -21,7 +21,7 @@ public class GymStaff {
     @EmbeddedId
     private Key id;
 
-    @Column(name = "assigned_at")
+    @Column(name = "assigned_at", nullable = false)
     private Instant assignedAt;
 
     @Column(name = "assigned_by")
@@ -37,6 +37,7 @@ public class GymStaff {
 
     public GymStaff(UUID gymId, UUID userId) {
         id = new Key(gymId, userId);
+        assignedAt = Instant.now();
     }
 
     public Key getId() {

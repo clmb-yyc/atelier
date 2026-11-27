@@ -2,6 +2,7 @@ package com.clmb.atelier.organizations;
 
 import com.clmb.atelier.administration.AdministrationService;
 import com.clmb.atelier.gyms.entities.Gym;
+import com.clmb.atelier.organizations.dtos.GymRequest;
 import com.clmb.atelier.organizations.dtos.GymResponse;
 import com.clmb.atelier.organizations.dtos.NameRequest;
 import com.clmb.atelier.organizations.dtos.OrganizationResponse;
@@ -39,8 +40,8 @@ public class OrganizationsController {
     @PostMapping("/{organizationId}/gyms")
     @ResponseStatus(HttpStatus.CREATED)
     public GymResponse createGym(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
-                                 @RequestBody NameRequest request) {
-        Gym gym = administration.createGym(userId(jwt), organizationId, request.name());
+                                 @RequestBody GymRequest request) {
+        Gym gym = administration.createGym(userId(jwt), organizationId, request);
         return new GymResponse(gym.getId(), gym.getOrganizationId(), gym.getName());
     }
 }

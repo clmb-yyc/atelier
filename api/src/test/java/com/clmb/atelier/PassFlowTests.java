@@ -7,7 +7,6 @@ import com.clmb.atelier.passes.entities.UserPass;
 import com.clmb.atelier.checkins.CheckInRepository;
 import com.clmb.atelier.gyms.GymRepository;
 import com.clmb.atelier.gyms.GymStaffRepository;
-import com.clmb.atelier.gyms.entities.Gym;
 import com.clmb.atelier.gyms.entities.GymStaff;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
 import com.clmb.atelier.organizations.OrganizationRepository;
@@ -24,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -71,9 +71,9 @@ class PassFlowTests {
         organizationId = organizations.save(new Organization("Climbing Co")).getId();
         UUID otherOrganization = organizations.save(new Organization("Other Co")).getId();
         admins.save(new OrganizationAdmin(organizationId, admin));
-        gymId = gyms.save(new Gym(organizationId, "Downtown")).getId();
-        siblingGymId = gyms.save(new Gym(organizationId, "North")).getId();
-        otherGymId = gyms.save(new Gym(otherOrganization, "West")).getId();
+        gymId = gyms.save(GymFixtures.gym(organizationId, "Downtown")).getId();
+        siblingGymId = gyms.save(GymFixtures.gym(organizationId, "North")).getId();
+        otherGymId = gyms.save(GymFixtures.gym(otherOrganization, "West")).getId();
         gymStaff.save(new GymStaff(otherGymId, otherStaff));
         passPath = "/api/organizations/" + organizationId + "/passes";
     }
@@ -81,13 +81,20 @@ class PassFlowTests {
     @Test
     void gymStaffCanUseMembersPassAtTheirGymAfterPlanArchival() throws Exception {
         postJson(passPath, member, Map.of("name", "Unauthorized")).andExpect(status().isForbidden());
-        postJson(passPath, admin, Map.of("name", "Other gym", "gymId", otherGymId, "passType", "DAY_PASS"))
+        postJson(passPath, admin, Map.of("name", "Missing price", "passType", "DAY_PASS",
+                "currency", "CAD", "isRenewable", false)).andExpect(status().isBadRequest());
+        postJson(passPath, admin, Map.of("name", "Other gym", "gymId", otherGymId, "passType", "DAY_PASS",
+                "price", 15, "currency", "CAD", "isRenewable", false))
                 .andExpect(status().isNotFound());
         UUID plan = createdId(postJson(passPath, admin,
-                Map.of("name", "One visit", "gymId", gymId, "passType", "DAY_PASS", "visitLimit", 1)));
+                Map.of("name", "One visit", "gymId", gymId, "passType", "DAY_PASS", "visitLimit", 1,
+                        "price", 15, "currency", "CAD", "isRenewable", false)));
         String issuePath = passPath + "/" + plan + "/user-passes";
         postJson(issuePath, admin, Map.of("userId", member)).andExpect(status().isBadRequest());
         UUID pass = issueUserPass(plan);
+        UserPass storedPass = passes.findById(pass).orElseThrow();
+        assertThat(storedPass.getIssuedBy()).isEqualTo(admin);
+        assertThat(storedPass.getPurchasedAt()).isNotNull();
 
         mvc.perform(get("/api/me/user-passes").with(jwt().jwt(builder -> builder.subject(member.toString()))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(pass.toString()));
@@ -101,6 +108,7 @@ class PassFlowTests {
         checkIn(gymId, pass, staff).andExpect(status().isForbidden());
         assignStaff(gymId, member, staff).andExpect(status().isForbidden());
         assignStaff(gymId, admin, staff).andExpect(status().isCreated());
+        assertThat(gymStaff.findById(new GymStaff.Key(gymId, staff)).orElseThrow().getAssignedAt()).isNotNull();
         assignStaff(gymId, admin, staff).andExpect(status().isNoContent());
         assignStaff(gymId, staff, member).andExpect(status().isForbidden());
         assignStaff(siblingGymId, staff, member).andExpect(status().isForbidden());
@@ -108,8 +116,9 @@ class PassFlowTests {
         checkIn(siblingGymId, pass, staff).andExpect(status().isForbidden());
         checkIn(siblingGymId, pass, admin).andExpect(status().isForbidden());
         checkIn(otherGymId, pass, otherStaff).andExpect(status().isNotFound());
-        checkIn(gymId, pass, staff).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.userPassId").value(pass.toString()));
+        UUID checkInId = createdId(checkIn(gymId, pass, staff)
+                .andExpect(jsonPath("$.userPassId").value(pass.toString())));
+        assertThat(checkIns.findById(checkInId).orElseThrow().getCheckedInBy()).isEqualTo(staff);
         checkIn(gymId, pass, staff).andExpect(status().isConflict());
         assertThat(checkIns.countByUserPassId(pass)).isEqualTo(1);
     }
@@ -118,16 +127,19 @@ class PassFlowTests {
     void rejectsClosedIssuanceAndInactivePasses() throws Exception {
         Instant now = Instant.now();
         UUID closedPlan = plans.save(new Pass(organizationId, null, "Closed", Pass.PassType.MEMBERSHIP,
-                now.minusSeconds(60), null)).getId();
+                now.minusSeconds(60), null, BigDecimal.TEN, "CAD", true)).getId();
         postJson(passPath + "/" + closedPlan + "/user-passes", admin,
                 Map.of("userId", member, "expiresAt", now.plusSeconds(3600))).andExpect(status().isConflict());
 
-        UUID expired = passes.save(new UserPass(closedPlan, member, now.minusSeconds(120), now.minusSeconds(60))).getId();
-        UUID future = passes.save(new UserPass(closedPlan, member, now.plusSeconds(60), now.plusSeconds(120))).getId();
+        UUID expired = passes.save(new UserPass(closedPlan, member, now.minusSeconds(120), now.minusSeconds(60),
+                now.minusSeconds(120), admin)).getId();
+        UUID future = passes.save(new UserPass(closedPlan, member, now.plusSeconds(60), now.plusSeconds(120),
+                now, admin)).getId();
         checkIn(gymId, expired, admin).andExpect(status().isConflict());
         checkIn(gymId, future, admin).andExpect(status().isConflict());
 
-        UUID pass = passes.save(new UserPass(closedPlan, member, now.minusSeconds(60), now.plusSeconds(3600))).getId();
+        UUID pass = passes.save(new UserPass(closedPlan, member, now.minusSeconds(60), now.plusSeconds(3600),
+                now.minusSeconds(60), admin)).getId();
         checkIn(siblingGymId, pass, admin).andExpect(status().isCreated());
         deleteAsAdmin("/api/organizations/" + organizationId + "/user-passes/" + pass)
                 .andExpect(status().isNoContent());
@@ -138,7 +150,8 @@ class PassFlowTests {
     @Test
     void concurrentCheckInsCanSpendTheLastVisitOnlyOnce() throws Exception {
         UUID plan = createdId(postJson(passPath, admin,
-                Map.of("name", "Chain pass", "passType", "VISIT_PASS", "visitLimit", 1)));
+                Map.of("name", "Chain pass", "passType", "VISIT_PASS", "visitLimit", 1,
+                        "price", 15, "currency", "CAD", "isRenewable", false)));
         UUID pass = issueUserPass(plan);
         CyclicBarrier start = new CyclicBarrier(2);
         try (var executor = Executors.newFixedThreadPool(2)) {
@@ -208,7 +221,8 @@ class PassFlowTests {
     }
 
     private UUID createPass(String name, String passType) throws Exception {
-        return createdId(postJson(passPath, admin, Map.of("name", name, "passType", passType)));
+        return createdId(postJson(passPath, admin, Map.of("name", name, "passType", passType,
+                "price", 15, "currency", "CAD", "isRenewable", false)));
     }
 
     private Callable<Integer> checkInWhenReady(CyclicBarrier start, UUID targetGym, UUID pass) {

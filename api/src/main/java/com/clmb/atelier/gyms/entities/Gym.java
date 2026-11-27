@@ -29,19 +29,25 @@ public class Gym {
     @Column(columnDefinition = "text")
     private String description;
 
+    @Column(nullable = false)
     private String address;
 
+    @Column(nullable = false)
     private String city;
 
-    @Column(name = "postal_code")
+    @Column(name = "postal_code", nullable = false)
     private String postalCode;
 
+    @Column(nullable = false)
     private String country;
 
+    @Column(nullable = false)
     private Double latitude;
 
+    @Column(nullable = false)
     private Double longitude;
 
+    @Column(nullable = false)
     private String timezone;
 
     @Column(name = "phone_number")
@@ -56,9 +62,17 @@ public class Gym {
 
     protected Gym() {}
 
-    public Gym(UUID organizationId, String name) {
+    public Gym(UUID organizationId, String name, String address, String city, String postalCode, String country,
+               double latitude, double longitude, String timezone) {
         this.organizationId = organizationId;
         this.name = name;
+        this.address = address;
+        this.city = city;
+        this.postalCode = postalCode;
+        this.country = country;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.timezone = timezone;
     }
 
     public UUID getId() {

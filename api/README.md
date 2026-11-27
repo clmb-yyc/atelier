@@ -7,16 +7,16 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 | Table | Fields | Additional nullable fields |
 | --- | --- | --- |
 | `organizations` | `id` (PK), `name`, `archived_at` (optional) | `description`, `slug`, `logo_url`, `website_url`, `contact_email`, `created_at` |
-| `gyms` | `id` (PK), `organization_id`, `name`, `archived_at` (optional) | `description`, `address`, `city`, `postal_code`, `country`, `latitude`, `longitude`, `timezone`, `phone_number`, `email`, `capacity`, `created_at` |
-| `organization_admins` | `organization_id` and `user_id` (composite PK) | `assigned_at`, `assigned_by` |
-| `gym_staff` | `gym_id` and `user_id` (composite PK) | `assigned_at`, `assigned_by`, `job_title`, `employment_type` |
-| `walls` | `id` (PK), `gym_id`, `name`, `discipline` (`BOULDER` or `ROPE`), `archived_at` (optional) | `description`, `height_m`, `angle_degrees`, `location`, `created_at` |
-| `routes` | `id` (PK), `wall_id`, `name` (optional), `grade` (text), `set_at`, `removed_at` (optional) | `description`, `colour`, `setter_id`, `hold_colour`, `style`, `difficulty_rating`, `image_url`, `removal_reason` |
-| `passes` | `id` (PK), `organization_id`, `gym_id` (optional), `name`, `pass_type` (optional on older passes), `valid_until` (optional), `visit_limit` (optional integer), `archived_at` (optional) | `description`, `price`, `currency`, `duration_days`, `is_renewable`, `created_at` |
-| `user_passes` | `id` (PK), `pass_id`, `user_id`, `starts_at`, `expires_at`, `revoked_at` (optional) | `purchased_at`, `issued_by`, `revoked_by`, `revocation_reason` |
-| `check_ins` | `id` (PK), `gym_id`, `user_pass_id`, `checked_in_at` | `checked_out_at`, `checked_in_by`, `voided_at` |
+| `gyms` | `id` (PK), `organization_id`, `name`, `address`, `city`, `postal_code`, `country`, `latitude`, `longitude`, `timezone`, `archived_at` (optional) | `description`, `phone_number`, `email`, `capacity`, `created_at` |
+| `organization_admins` | `organization_id` and `user_id` (composite PK), `assigned_at` | `assigned_by` |
+| `gym_staff` | `gym_id` and `user_id` (composite PK), `assigned_at` | `assigned_by`, `job_title`, `employment_type` |
+| `walls` | `id` (PK), `gym_id`, `name`, `discipline` (`BOULDER` or `ROPE`), `created_at`, `archived_at` (optional) | `description`, `height_m`, `angle_degrees`, `location` |
+| `routes` | `id` (PK), `wall_id`, `name` (optional), `grade` (text), `colour`, `setter_id`, `hold_colour`, `difficulty_rating` (integer), `set_at`, `removed_at` (optional) | `description`, `style`, `image_url`, `removal_reason` |
+| `passes` | `id` (PK), `organization_id`, `gym_id` (optional), `name`, `pass_type` (optional on older passes), `price`, `currency`, `is_renewable`, `created_at`, `valid_until` (optional), `visit_limit` (optional integer), `archived_at` (optional) | `description`, `duration_days` |
+| `user_passes` | `id` (PK), `pass_id`, `user_id`, `starts_at`, `expires_at`, `purchased_at`, `issued_by`, `revoked_at` (optional) | `revoked_by`, `revocation_reason` |
+| `check_ins` | `id` (PK), `gym_id`, `user_pass_id`, `checked_in_at`, `checked_in_by` | `checked_out_at`, `voided_at` |
 
-Atelier validates the PostgreSQL schema on startup. These columns need to exist before the API starts. The endpoint tables below list which fields the API currently accepts and returns.
+Atelier validates the PostgreSQL schema on startup. Create these columns before starting the API. For an existing database, backfill newly required fields before applying their `NOT NULL` constraints. The endpoint tables below list which fields the API currently accepts and returns.
 
 - An organization can operate multiple gyms. Organization admins manage all gyms in their organization. Staff assignments are scoped to a gym.
 - A route inherits its discipline from its wall and stores its own grade. Archiving a wall preserves its routes.
@@ -34,18 +34,18 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | Method and path | Who can call it | Request body | Success response |
 | --- | --- | --- | --- |
 | `POST /api/organizations` | Auth `STAFF` | `name` | `201 Created` with `id` and `name`. The caller becomes the first organization admin. |
-| `POST /api/organizations/{organizationId}/gyms` | Organization admin | `name` | `201 Created` with `id`, `organizationId`, and `name`. |
-| `PUT /api/organizations/{organizationId}/admins/{userId}` | Organization admin | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
-| `PUT /api/gyms/{gymId}/staff/{userId}` | Admin of the gym's organization | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
-| `POST /api/gyms/{gymId}/walls` | Admin of the gym's organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. |
-| `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Admin of the gym's organization | `grade`, optional `name` | `201 Created` with `id`, `wallId`, `name`, `grade`, and `setAt`. |
+| `POST /api/organizations/{organizationId}/gyms` | Organization admin | Required `name`, `address`, `city`, `postalCode`, `country`, `latitude`, `longitude`, and `timezone` | `201 Created` with `id`, `organizationId`, and `name`. Missing required fields return `400 Bad Request`. |
+| `PUT /api/organizations/{organizationId}/admins/{userId}` | Organization admin | None | `201 Created` for a new assignment, with `assigned_at` recorded by the server, or `204 No Content` if it already exists. Both have an empty body. |
+| `PUT /api/gyms/{gymId}/staff/{userId}` | Admin of the gym's organization | None | `201 Created` for a new assignment, with `assigned_at` recorded by the server, or `204 No Content` if it already exists. Both have an empty body. |
+| `POST /api/gyms/{gymId}/walls` | Admin of the gym's organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. The server records `created_at`. |
+| `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Admin of the gym's organization | `grade`, `colour`, `setterId` (user UUID), `holdColour`, `difficultyRating` (integer), optional `name` | `201 Created` with `id`, `wallId`, `name`, `grade`, and `setAt`. |
 | `GET /api/gyms/{gymId}/routes` | Staff assigned to the gym or an admin of its organization | None | `200 OK` with an array of active routes, newest first. Each item includes `id`, `wallId`, `wallName`, `discipline`, `name`, `grade`, and `setAt`. |
 
 ### Passes and user passes
 
 | Method and path | Who can call it | Request body | Success response |
 | --- | --- | --- | --- |
-| `POST /api/organizations/{organizationId}/passes` | Organization admin | `name`, `passType` (`MEMBERSHIP`, `DAY_PASS`, or `VISIT_PASS`), optional `gymId`, `validUntil`, and `visitLimit` | `201 Created` with a pass. Omit `gymId` for organization-wide access or `visitLimit` for unlimited visits. |
+| `POST /api/organizations/{organizationId}/passes` | Organization admin | `name`, `passType` (`MEMBERSHIP`, `DAY_PASS`, or `VISIT_PASS`), `price` (zero or greater), `currency` (three-letter code), `isRenewable` (boolean), optional `gymId`, `validUntil`, and `visitLimit` | `201 Created` with a pass. The server records `created_at`. Omit `gymId` for organization-wide access or `visitLimit` for unlimited visits. |
 | `GET /api/organizations/{organizationId}/passes` | Organization admin | None | `200 OK` with an array of passes, including archived passes, ordered by name. |
 | `DELETE /api/organizations/{organizationId}/passes/{passId}` | Organization admin | None | `204 No Content`. Archives the pass, closing it to new issuance. |
 | `POST /api/organizations/{organizationId}/passes/{passId}/user-passes` | Organization admin | `userId`, `expiresAt`, optional `startsAt` (defaults to now) | `201 Created` with a user pass. |
@@ -55,6 +55,7 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 
 - A pass returns `id`, `organizationId`, `gymId`, `name`, `passType`, `validUntil`, `visitLimit`, and `archivedAt`. Older passes without a type cannot be issued to users.
 - A user pass returns `id`, `passId`, `userId`, `startsAt`, `expiresAt`, and `revokedAt`.
+- When issuing a user pass, the server sets `purchased_at` to the issuance time and `issued_by` to the authenticated caller's user ID.
 - `validUntil` is the cutoff for issuing a pass to users. A user pass uses its own `expiresAt`.
 - Issuance checks overlapping user passes for the same account and organization. A conflicting membership returns `409 EXISTING_MEMBERSHIP`. Unused day or visit passes return `409 EXISTING_PASSES_REVIEW` when starting a membership. The response includes `conflictingUserPassIds` for the front desk. Review leaves the existing user passes intact.
 
@@ -62,7 +63,7 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 
 | Method and path | Who can call it | Request body | Success response |
 | --- | --- | --- | --- |
-| `POST /api/gyms/{gymId}/check-ins` | Staff assigned to the gym or an admin of its organization | `userPassId` | `201 Created` with `id`, `gymId`, `userPassId`, and `checkedInAt`. Each success records one visit for the member who holds the pass. |
+| `POST /api/gyms/{gymId}/check-ins` | Staff assigned to the gym or an admin of its organization | `userPassId` | `201 Created` with `id`, `gymId`, `userPassId`, and `checkedInAt`. Each success records one visit for the pass holder and stores the caller's user ID in `checked_in_by`. |
 
 ### Error responses
 

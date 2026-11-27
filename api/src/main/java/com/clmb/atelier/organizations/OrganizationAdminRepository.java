@@ -11,8 +11,8 @@ import java.util.UUID;
 public interface OrganizationAdminRepository extends JpaRepository<OrganizationAdmin, OrganizationAdmin.Key> {
     @Modifying
     @Query(value = """
-            INSERT INTO organization_admins (organization_id, user_id)
-            VALUES (:organizationId, :userId)
+            INSERT INTO organization_admins (organization_id, user_id, assigned_at)
+            VALUES (:organizationId, :userId, CURRENT_TIMESTAMP)
             ON CONFLICT DO NOTHING
             """, nativeQuery = true)
     int grant(@Param("organizationId") UUID organizationId, @Param("userId") UUID userId);

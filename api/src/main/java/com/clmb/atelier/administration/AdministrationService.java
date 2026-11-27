@@ -5,8 +5,10 @@ import com.clmb.atelier.gyms.GymStaffRepository;
 import com.clmb.atelier.gyms.entities.Gym;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
 import com.clmb.atelier.organizations.OrganizationRepository;
+import com.clmb.atelier.organizations.dtos.GymRequest;
 import com.clmb.atelier.organizations.entities.Organization;
 import com.clmb.atelier.routes.RouteRepository;
+import com.clmb.atelier.routes.dtos.RouteRequest;
 import com.clmb.atelier.routes.entities.Route;
 import com.clmb.atelier.walls.WallRepository;
 import com.clmb.atelier.walls.entities.Wall;
@@ -49,9 +51,21 @@ public class AdministrationService {
         return organization;
     }
 
-    public Gym createGym(UUID actorId, UUID organizationId, String name) {
+    public Gym createGym(UUID actorId, UUID organizationId, GymRequest request) {
         access.requireOrganizationAdmin(actorId, organizationId);
-        return gyms.save(new Gym(organizationId, requiredText(name, "name")));
+        if (request.latitude() == null || request.longitude() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "latitude and longitude are required");
+        }
+        return gyms.save(new Gym(
+                organizationId,
+                requiredText(request.name(), "name"),
+                requiredText(request.address(), "address"),
+                requiredText(request.city(), "city"),
+                requiredText(request.postalCode(), "postalCode"),
+                requiredText(request.country(), "country"),
+                request.latitude(),
+                request.longitude(),
+                requiredText(request.timezone(), "timezone")));
     }
 
     public boolean grantOrganizationAdmin(UUID actorId, UUID organizationId, UUID userId) {
@@ -72,12 +86,18 @@ public class AdministrationService {
         return walls.save(new Wall(gymId, requiredText(name, "name"), discipline));
     }
 
-    public Route createRoute(UUID actorId, UUID gymId, UUID wallId, String name, String grade) {
+    public Route createRoute(UUID actorId, UUID gymId, UUID wallId, RouteRequest request) {
         access.requireOrganizationAdminForGym(actorId, gymId);
         walls.findByIdAndGymIdAndArchivedAtIsNull(wallId, gymId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wall not found in this gym"));
+        if (request.setterId() == null || request.difficultyRating() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "setterId and difficultyRating are required");
+        }
+        String name = request.name();
         String routeName = name == null || name.isBlank() ? null : name.strip();
-        return routes.save(new Route(wallId, routeName, requiredText(grade, "grade"), Instant.now()));
+        return routes.save(new Route(wallId, routeName, requiredText(request.grade(), "grade"), Instant.now(),
+                requiredText(request.colour(), "colour"), request.setterId(),
+                requiredText(request.holdColour(), "holdColour"), request.difficultyRating()));
     }
 
     private static String requiredText(String value, String field) {

@@ -45,7 +45,7 @@ public class Wall {
 
     private String location;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     protected Wall() {}
@@ -54,6 +54,7 @@ public class Wall {
         this.gymId = gymId;
         this.name = name;
         this.discipline = discipline;
+        this.createdAt = Instant.now();
     }
 
     public UUID getId() {
