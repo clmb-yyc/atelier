@@ -16,7 +16,7 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 | `user_passes` | `id` (PK), `pass_id`, `user_id`, `starts_at`, `expires_at`, `purchased_at`, `issued_by`, `created_at` | `revoked_at`, `revoked_by`, `revocation_reason` |
 | `check_ins` | `id` (PK), `gym_id`, `user_pass_id`, `checked_in_at`, `checked_in_by`, `created_at` | `checked_out_at`, `voided_at` |
 
-Atelier sets `created_at` automatically for new records. Atelier validates the PostgreSQL schema on startup. Create these columns before starting the API. For an existing database, backfill newly required fields before applying their `NOT NULL` constraints. The endpoint tables below list which fields the API currently accepts and returns.
+Atelier sets `created_at` automatically for new records.
 
 - An organization can operate multiple gyms. Organization admins manage all gyms in their organization. Staff assignments are scoped to a gym.
 - A route inherits its discipline from its wall and stores its own grade. Archiving a wall preserves its routes.
