@@ -32,9 +32,6 @@ public class CheckIn {
     @Column(name = "checked_in_by")
     private UUID checkedInBy;
 
-    @Column(name = "check_in_method")
-    private String checkInMethod;
-
     @Column(name = "voided_at")
     private Instant voidedAt;
 
@@ -76,14 +73,6 @@ public class CheckIn {
 
     public void setCheckedInBy(UUID checkedInBy) {
         this.checkedInBy = checkedInBy;
-    }
-
-    public String getCheckInMethod() {
-        return checkInMethod;
-    }
-
-    public void setCheckInMethod(String checkInMethod) {
-        this.checkInMethod = checkInMethod;
     }
 
     public Instant getVoidedAt() {
