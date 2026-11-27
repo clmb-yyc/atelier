@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -42,6 +43,24 @@ public class Pass {
 
     @Column(name = "archived_at")
     private Instant archivedAt;
+
+    @Column(columnDefinition = "text")
+    private String description;
+
+    @Column(precision = 19, scale = 4)
+    private BigDecimal price;
+
+    @Column(length = 3)
+    private String currency;
+
+    @Column(name = "duration_days")
+    private Integer durationDays;
+
+    @Column(name = "is_renewable")
+    private Boolean isRenewable;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
 
     protected Pass() {}
 
@@ -89,5 +108,53 @@ public class Pass {
 
     public void archive(Instant at) {
         archivedAt = at;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public Integer getDurationDays() {
+        return durationDays;
+    }
+
+    public void setDurationDays(Integer durationDays) {
+        this.durationDays = durationDays;
+    }
+
+    public Boolean getRenewable() {
+        return isRenewable;
+    }
+
+    public void setRenewable(Boolean isRenewable) {
+        this.isRenewable = isRenewable;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

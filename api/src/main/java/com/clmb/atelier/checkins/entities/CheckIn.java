@@ -26,6 +26,18 @@ public class CheckIn {
     @Column(name = "checked_in_at", nullable = false)
     private Instant checkedInAt;
 
+    @Column(name = "checked_out_at")
+    private Instant checkedOutAt;
+
+    @Column(name = "checked_in_by")
+    private UUID checkedInBy;
+
+    @Column(name = "check_in_method")
+    private String checkInMethod;
+
+    @Column(name = "voided_at")
+    private Instant voidedAt;
+
     protected CheckIn() {}
 
     public CheckIn(UUID gymId, UUID userPassId, Instant checkedInAt) {
@@ -48,5 +60,37 @@ public class CheckIn {
 
     public Instant getCheckedInAt() {
         return checkedInAt;
+    }
+
+    public Instant getCheckedOutAt() {
+        return checkedOutAt;
+    }
+
+    public void setCheckedOutAt(Instant checkedOutAt) {
+        this.checkedOutAt = checkedOutAt;
+    }
+
+    public UUID getCheckedInBy() {
+        return checkedInBy;
+    }
+
+    public void setCheckedInBy(UUID checkedInBy) {
+        this.checkedInBy = checkedInBy;
+    }
+
+    public String getCheckInMethod() {
+        return checkInMethod;
+    }
+
+    public void setCheckInMethod(String checkInMethod) {
+        this.checkInMethod = checkInMethod;
+    }
+
+    public Instant getVoidedAt() {
+        return voidedAt;
+    }
+
+    public void setVoidedAt(Instant voidedAt) {
+        this.voidedAt = voidedAt;
     }
 }

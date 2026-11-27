@@ -6,6 +6,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -20,6 +21,12 @@ public class OrganizationAdmin {
     @EmbeddedId
     private Key id;
 
+    @Column(name = "assigned_at")
+    private Instant assignedAt;
+
+    @Column(name = "assigned_by")
+    private UUID assignedBy;
+
     protected OrganizationAdmin() {}
 
     public OrganizationAdmin(UUID organizationId, UUID userId) {
@@ -28,5 +35,21 @@ public class OrganizationAdmin {
 
     public Key getId() {
         return id;
+    }
+
+    public Instant getAssignedAt() {
+        return assignedAt;
+    }
+
+    public void setAssignedAt(Instant assignedAt) {
+        this.assignedAt = assignedAt;
+    }
+
+    public UUID getAssignedBy() {
+        return assignedBy;
+    }
+
+    public void setAssignedBy(UUID assignedBy) {
+        this.assignedBy = assignedBy;
     }
 }

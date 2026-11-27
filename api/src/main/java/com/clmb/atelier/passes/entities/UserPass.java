@@ -32,6 +32,18 @@ public class UserPass {
     @Column(name = "revoked_at")
     private Instant revokedAt;
 
+    @Column(name = "purchased_at")
+    private Instant purchasedAt;
+
+    @Column(name = "issued_by")
+    private UUID issuedBy;
+
+    @Column(name = "revoked_by")
+    private UUID revokedBy;
+
+    @Column(name = "revocation_reason", columnDefinition = "text")
+    private String revocationReason;
+
     protected UserPass() {}
 
     public UserPass(UUID passId, UUID userId, Instant startsAt, Instant expiresAt) {
@@ -67,5 +79,37 @@ public class UserPass {
 
     public void revoke(Instant at) {
         revokedAt = at;
+    }
+
+    public Instant getPurchasedAt() {
+        return purchasedAt;
+    }
+
+    public void setPurchasedAt(Instant purchasedAt) {
+        this.purchasedAt = purchasedAt;
+    }
+
+    public UUID getIssuedBy() {
+        return issuedBy;
+    }
+
+    public void setIssuedBy(UUID issuedBy) {
+        this.issuedBy = issuedBy;
+    }
+
+    public UUID getRevokedBy() {
+        return revokedBy;
+    }
+
+    public void setRevokedBy(UUID revokedBy) {
+        this.revokedBy = revokedBy;
+    }
+
+    public String getRevocationReason() {
+        return revocationReason;
+    }
+
+    public void setRevocationReason(String revocationReason) {
+        this.revocationReason = revocationReason;
     }
 }

@@ -34,6 +34,20 @@ public class Wall {
     @Column(name = "archived_at")
     private Instant archivedAt;
 
+    @Column(columnDefinition = "text")
+    private String description;
+
+    @Column(name = "height_m")
+    private Double heightM;
+
+    @Column(name = "angle_degrees")
+    private Double angleDegrees;
+
+    private String location;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
     protected Wall() {}
 
     public Wall(UUID gymId, String name, Discipline discipline) {
@@ -64,5 +78,45 @@ public class Wall {
 
     public void archive(Instant at) {
         archivedAt = at;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Double getHeightM() {
+        return heightM;
+    }
+
+    public void setHeightM(Double heightM) {
+        this.heightM = heightM;
+    }
+
+    public Double getAngleDegrees() {
+        return angleDegrees;
+    }
+
+    public void setAngleDegrees(Double angleDegrees) {
+        this.angleDegrees = angleDegrees;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

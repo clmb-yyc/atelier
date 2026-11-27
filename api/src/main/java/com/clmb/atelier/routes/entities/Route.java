@@ -31,6 +31,28 @@ public class Route {
     @Column(name = "removed_at")
     private Instant removedAt;
 
+    @Column(columnDefinition = "text")
+    private String description;
+
+    private String colour;
+
+    @Column(name = "setter_id")
+    private UUID setterId;
+
+    @Column(name = "hold_colour")
+    private String holdColour;
+
+    private String style;
+
+    @Column(name = "difficulty_rating")
+    private Integer difficultyRating;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "removal_reason", columnDefinition = "text")
+    private String removalReason;
+
     protected Route() {}
 
     public Route(UUID wallId, String name, String grade, Instant setAt) {
@@ -66,5 +88,69 @@ public class Route {
 
     public void remove(Instant at) {
         removedAt = at;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getColour() {
+        return colour;
+    }
+
+    public void setColour(String colour) {
+        this.colour = colour;
+    }
+
+    public UUID getSetterId() {
+        return setterId;
+    }
+
+    public void setSetterId(UUID setterId) {
+        this.setterId = setterId;
+    }
+
+    public String getHoldColour() {
+        return holdColour;
+    }
+
+    public void setHoldColour(String holdColour) {
+        this.holdColour = holdColour;
+    }
+
+    public String getStyle() {
+        return style;
+    }
+
+    public void setStyle(String style) {
+        this.style = style;
+    }
+
+    public Integer getDifficultyRating() {
+        return difficultyRating;
+    }
+
+    public void setDifficultyRating(Integer difficultyRating) {
+        this.difficultyRating = difficultyRating;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getRemovalReason() {
+        return removalReason;
+    }
+
+    public void setRemovalReason(String removalReason) {
+        this.removalReason = removalReason;
     }
 }

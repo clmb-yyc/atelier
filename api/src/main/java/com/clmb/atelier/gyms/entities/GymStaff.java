@@ -6,6 +6,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -20,6 +21,18 @@ public class GymStaff {
     @EmbeddedId
     private Key id;
 
+    @Column(name = "assigned_at")
+    private Instant assignedAt;
+
+    @Column(name = "assigned_by")
+    private UUID assignedBy;
+
+    @Column(name = "job_title")
+    private String jobTitle;
+
+    @Column(name = "employment_type")
+    private String employmentType;
+
     protected GymStaff() {}
 
     public GymStaff(UUID gymId, UUID userId) {
@@ -28,5 +41,37 @@ public class GymStaff {
 
     public Key getId() {
         return id;
+    }
+
+    public Instant getAssignedAt() {
+        return assignedAt;
+    }
+
+    public void setAssignedAt(Instant assignedAt) {
+        this.assignedAt = assignedAt;
+    }
+
+    public UUID getAssignedBy() {
+        return assignedBy;
+    }
+
+    public void setAssignedBy(UUID assignedBy) {
+        this.assignedBy = assignedBy;
+    }
+
+    public String getJobTitle() {
+        return jobTitle;
+    }
+
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
+    }
+
+    public String getEmploymentType() {
+        return employmentType;
+    }
+
+    public void setEmploymentType(String employmentType) {
+        this.employmentType = employmentType;
     }
 }
