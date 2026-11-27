@@ -197,6 +197,63 @@ class AtelierApplicationTests {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void sharesPublicGradesAndRestrictsPrivateSystemsToTheirGym() throws Exception {
+        String admin = token("ROLE_STAFF");
+        String otherAdmin = token("ROLE_STAFF");
+        UUID staffId = UUID.randomUUID();
+        String staff = token("ROLE_VIEWER", staffId);
+        String org = createdId(postJson("/api/organizations", admin, "{\"name\":\"Grading Co\"}"));
+        String otherOrg = createdId(postJson("/api/organizations", otherAdmin, "{\"name\":\"Other Grading Co\"}"));
+        String gymsPath = "/api/organizations/" + org + "/gyms";
+        String gym = createdId(postJson(gymsPath, admin, gymRequest("Downtown")));
+        String sibling = createdId(postJson(gymsPath, admin, gymRequest("North")));
+        String otherGym = createdId(postJson("/api/organizations/" + otherOrg + "/gyms", otherAdmin, gymRequest("West")));
+        String path = gradingPath(gym);
+        grant("/api/gyms/" + gym + "/staff/" + staffId, admin).andExpect(status().isCreated());
+        grant("/api/gyms/" + otherGym + "/staff/" + staffId, otherAdmin).andExpect(status().isCreated());
+
+        String body = mvc.perform(get(path).header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Fontainebleau"))
+                .andExpect(jsonPath("$[1].name").value("V-scale"))
+                .andExpect(jsonPath("$[1].grades[10].label").value("V9"))
+                .andExpect(jsonPath("$[1].grades[11].label").value("V10"))
+                .andReturn().getResponse().getContentAsString();
+        String publicId = json.readTree(body).get(0).get("id").asString();
+
+        String request = "{\"name\":\"Custom\"}";
+        postJson(path, admin, request).andExpect(status().isForbidden());
+        mvc.perform(get(path).header("Authorization", "Bearer " + admin)).andExpect(status().isForbidden());
+        mvc.perform(get(path).header("Authorization", "Bearer " + otherAdmin)).andExpect(status().isForbidden());
+        String systemId = createdId(postJson(path, staff, request)
+                .andExpect(jsonPath("$.visibility").value("PRIVATE"))
+                .andExpect(jsonPath("$.gymId").value(gym)));
+        String grade = "{\"label\":\"Red\",\"sortOrder\":2}";
+        postJson(path + "/" + systemId + "/grades", admin, grade).andExpect(status().isForbidden());
+        postJson(path + "/" + publicId + "/grades", staff, grade).andExpect(status().isNotFound());
+        postJson(gradingPath(sibling) + "/" + systemId + "/grades", staff, grade).andExpect(status().isForbidden());
+        grant("/api/gyms/" + sibling + "/staff/" + staffId, admin).andExpect(status().isCreated());
+        postJson(gradingPath(sibling) + "/" + systemId + "/grades", staff, grade).andExpect(status().isNotFound());
+        postJson(path + "/" + systemId + "/grades", staff, grade).andExpect(status().isCreated());
+        postJson(path + "/" + systemId + "/grades", staff, grade).andExpect(status().isConflict());
+        postJson(path + "/" + systemId + "/grades", staff, "{\"label\":\"Blue\",\"sortOrder\":1}")
+                .andExpect(status().isCreated());
+
+        mvc.perform(get(path).header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(systemId))
+                .andExpect(jsonPath("$[0].grades[0].label").value("Blue"))
+                .andExpect(jsonPath("$[0].grades[1].label").value("Red"));
+        mvc.perform(get(gradingPath(sibling)).header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+        mvc.perform(get(gradingPath(otherGym)).header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+    }
+
+    private static String gradingPath(String gymId) {
+        return "/api/gyms/" + gymId + "/grading-systems";
+    }
+
     private static String gymRequest(String name) {
         return """
                 {"name":"%s","address":"100 Main St","city":"Calgary","postalCode":"T2P 1J9",

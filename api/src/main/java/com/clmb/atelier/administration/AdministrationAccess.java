@@ -48,11 +48,17 @@ public class AdministrationAccess {
 
     public Gym requireGymStaffOrAdmin(UUID actorId, UUID gymId) {
         Gym gym = requireActiveGym(gymId);
-        if (!isOrganizationAdmin(actorId, gym.getOrganizationId())
-                && !staff.existsById(new GymStaff.Key(gymId, actorId))) {
+        if (!isOrganizationAdmin(actorId, gym.getOrganizationId()) && !isGymStaff(actorId, gymId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Gym staff or organization admin access required");
         }
         return gym;
+    }
+
+    public void requireGymStaff(UUID actorId, UUID gymId) {
+        requireActiveGym(gymId);
+        if (!isGymStaff(actorId, gymId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Gym staff access required");
+        }
     }
 
     public void requireOrganizationAdmin(UUID actorId, UUID organizationId) {
@@ -68,5 +74,9 @@ public class AdministrationAccess {
 
     private boolean isOrganizationAdmin(UUID actorId, UUID organizationId) {
         return organizationAdmins.existsById(new OrganizationAdmin.Key(organizationId, actorId));
+    }
+
+    private boolean isGymStaff(UUID actorId, UUID gymId) {
+        return staff.existsById(new GymStaff.Key(gymId, actorId));
     }
 }

@@ -12,6 +12,8 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 | `gym_staff` | `gym_id` and `user_id` (composite PK), `assigned_at`, `created_at` | `assigned_by`, `job_title`, `employment_type` |
 | `walls` | `id` (PK), `gym_id`, `name`, `discipline` (`BOULDER` or `ROPE`), `created_at` | `archived_at`, `description`, `height_m`, `angle_degrees`, `location` |
 | `routes` | `id` (PK), `wall_id`, `grade` (text), `colour`, `setter_id`, `hold_colour`, `difficulty_rating` (integer), `set_at`, `created_at` | `name`, `removed_at`, `description`, `style`, `image_url`, `removal_reason` |
+| `grading_systems` | `id` (PK), `name`, `visibility` (`PUBLIC` or `PRIVATE`), `created_at` | `gym_id`, `description` |
+| `grades` | `id` (PK), `grading_system_id`, `label`, `sort_order`, `created_at` | `description` |
 | `passes` | `id` (PK), `organization_id`, `name`, `price`, `currency`, `is_renewable`, `created_at` | `gym_id`, `pass_type` (older passes), `valid_until`, `visit_limit` (integer), `archived_at`, `description`, `duration_days` |
 | `user_passes` | `id` (PK), `pass_id`, `user_id`, `starts_at`, `expires_at`, `purchased_at`, `issued_by`, `created_at` | `revoked_at`, `revoked_by`, `revocation_reason` |
 | `check_ins` | `id` (PK), `gym_id`, `user_pass_id`, `checked_in_at`, `checked_in_by`, `created_at` | `checked_out_at`, `voided_at` |
@@ -20,6 +22,7 @@ Atelier sets `created_at` automatically for new records.
 
 - An organization can operate multiple gyms. Organization admins manage all gyms in their organization. Staff assignments are scoped to a gym.
 - A route inherits its discipline from its wall and stores its own grade. Archiving a wall preserves its routes.
+- Public grading systems are available at every gym and have a null `gym_id`. Private systems have a `gym_id` and are available only at that gym. Grades inherit their system's visibility and have a unique label within that system.
 - A pass with no `gym_id` covers every gym in its organization. Each user pass has its own required expiry.
 - Archiving a pass closes it to new issuance. Existing user passes still reference it for scope and any visit limit.
 - Each check-in records one successful entry. The pass identifies the member. Count the pass's check-ins to calculate visits used.
@@ -40,6 +43,17 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | `POST /api/gyms/{gymId}/walls` | Admin of the gym's organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. The server records `created_at`. |
 | `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Admin of the gym's organization | `grade`, `colour`, `setterId` (user UUID), `holdColour`, `difficultyRating` (integer), optional `name` | `201 Created` with `id`, `wallId`, `name`, `grade`, and `setAt`. |
 | `GET /api/gyms/{gymId}/routes` | Staff assigned to the gym or an admin of its organization | None | `200 OK` with an array of active routes, newest first. Each item includes `id`, `wallId`, `wallName`, `discipline`, `name`, `grade`, and `setAt`. |
+
+### Grading settings
+
+| Method and path | Who can call it | Request body | Success response |
+| --- | --- | --- | --- |
+| `GET /api/gyms/{gymId}/grading-systems` | Staff assigned to the gym | None | `200 OK` with all public systems and the gym's private systems, ordered by name. Each system includes its grades, ordered by `sortOrder` and then `label`. |
+| `POST /api/gyms/{gymId}/grading-systems` | Staff assigned to the gym | `name`, optional `description` | `201 Created` with a private system and an empty `grades` array. |
+| `POST /api/gyms/{gymId}/grading-systems/{systemId}/grades` | Staff assigned to the gym | `label`, `sortOrder` (integer, zero or greater), optional `description` | `201 Created` with the grade. The system must be private and belong to the requested gym. A duplicate label in that system returns `409 Conflict`. |
+
+- A grading system returns `id`, `gymId`, `name`, `description`, `visibility`, `createdAt`, and `grades`.
+- A grade returns `id`, `gradingSystemId`, `label`, `description`, `sortOrder`, and `createdAt`.
 
 ### Passes and user passes
 
