@@ -27,11 +27,11 @@ public class CheckInController {
     @ResponseStatus(HttpStatus.CREATED)
     public CheckInResponse checkIn(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,
                                    @RequestBody CheckInRequest request) {
-        CheckIn checkIn = checkIns.checkIn(accountId(jwt), gymId, request.memberPassId());
-        return new CheckInResponse(checkIn.getId(), checkIn.getGymId(), checkIn.getMemberPassId(),
+        CheckIn checkIn = checkIns.checkIn(accountId(jwt), gymId, request.userPassId());
+        return new CheckInResponse(checkIn.getId(), checkIn.getGymId(), checkIn.getUserPassId(),
                 checkIn.getCheckedInAt());
     }
 
-    public record CheckInRequest(UUID memberPassId) {}
-    public record CheckInResponse(UUID id, UUID gymId, UUID memberPassId, Instant checkedInAt) {}
+    public record CheckInRequest(UUID userPassId) {}
+    public record CheckInResponse(UUID id, UUID gymId, UUID userPassId, Instant checkedInAt) {}
 }

@@ -1,9 +1,9 @@
 package com.clmb.atelier;
 
-import com.clmb.atelier.access.AccessPlanRepository;
-import com.clmb.atelier.access.MemberPassRepository;
-import com.clmb.atelier.access.entities.AccessPlan;
-import com.clmb.atelier.access.entities.MemberPass;
+import com.clmb.atelier.passes.PassRepository;
+import com.clmb.atelier.passes.UserPassRepository;
+import com.clmb.atelier.passes.entities.Pass;
+import com.clmb.atelier.passes.entities.UserPass;
 import com.clmb.atelier.checkins.CheckInRepository;
 import com.clmb.atelier.checkins.entities.CheckIn;
 import com.clmb.atelier.gyms.GymRepository;
@@ -44,8 +44,8 @@ class PersistenceTests {
     @Autowired GymStaffRepository staff;
     @Autowired WallRepository walls;
     @Autowired RouteRepository routes;
-    @Autowired AccessPlanRepository plans;
-    @Autowired MemberPassRepository passes;
+    @Autowired PassRepository plans;
+    @Autowired UserPassRepository passes;
     @Autowired CheckInRepository checkIns;
     @Autowired EntityManager entityManager;
 
@@ -58,9 +58,9 @@ class PersistenceTests {
         var employee = staff.save(new GymStaff(gym.getId(), UUID.randomUUID()));
         Wall wall = walls.save(new Wall(gym.getId(), "Slab", Wall.Discipline.BOULDER));
         Route route = routes.save(new Route(wall.getId(), null, "V4", NOW));
-        AccessPlan plan = plans.save(new AccessPlan(organization.getId(), gym.getId(), "10 visits",
-                AccessPlan.PlanType.VISIT_PASS, null, 10));
-        MemberPass pass = passes.save(new MemberPass(plan.getId(), memberId, NOW, NOW.plusSeconds(3600)));
+        Pass plan = plans.save(new Pass(organization.getId(), gym.getId(), "10 visits",
+                Pass.PassType.VISIT_PASS, null, 10));
+        UserPass pass = passes.save(new UserPass(plan.getId(), memberId, NOW, NOW.plusSeconds(3600)));
         checkIns.save(new CheckIn(gym.getId(), pass.getId(), NOW));
 
         wall.archive(NOW);
@@ -72,23 +72,23 @@ class PersistenceTests {
         assertThat(staff.existsById(employee.getId())).isTrue();
         assertThat(routes.findById(route.getId()).orElseThrow().getWallId()).isEqualTo(wall.getId());
         assertThat(walls.findById(wall.getId()).orElseThrow().getArchivedAt()).isEqualTo(NOW);
-        MemberPass stored = passes.findById(pass.getId()).orElseThrow();
+        UserPass stored = passes.findById(pass.getId()).orElseThrow();
         assertThat(stored.getAccountId()).isEqualTo(memberId);
         assertThat(stored.getExpiresAt()).isEqualTo(NOW.plusSeconds(3600));
-        AccessPlan storedPlan = plans.findById(stored.getAccessPlanId()).orElseThrow();
+        Pass storedPlan = plans.findById(stored.getPassId()).orElseThrow();
         assertThat(storedPlan.getArchivedAt()).isEqualTo(NOW);
         assertThat(storedPlan.getVisitLimit()).isEqualTo(10);
-        assertThat(checkIns.countByMemberPassId(pass.getId())).isEqualTo(1);
+        assertThat(checkIns.countByUserPassId(pass.getId())).isEqualTo(1);
     }
 
     @Test
-    void rejectsAnAccessPlanForAnotherOrganizationsGym() {
+    void rejectsAPassForAnotherOrganizationsGym() {
         Organization first = organizations.save(new Organization("Climbing Co"));
         Organization second = organizations.save(new Organization("Another Gym Co"));
         Gym gym = gyms.save(new Gym(second.getId(), "Downtown"));
 
-        assertThatThrownBy(() -> plans.saveAndFlush(new AccessPlan(first.getId(), gym.getId(), "10 visits",
-                AccessPlan.PlanType.VISIT_PASS, null, 10)))
+        assertThatThrownBy(() -> plans.saveAndFlush(new Pass(first.getId(), gym.getId(), "10 visits",
+                Pass.PassType.VISIT_PASS, null, 10)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

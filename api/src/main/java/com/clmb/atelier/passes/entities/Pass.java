@@ -1,4 +1,4 @@
-package com.clmb.atelier.access.entities;
+package com.clmb.atelier.passes.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,9 +13,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "access_plans")
-public class AccessPlan {
-    public enum PlanType { MEMBERSHIP, DAY_PASS, VISIT_PASS }
+@Table(name = "passes")
+public class Pass {
+    public enum PassType { MEMBERSHIP, DAY_PASS, VISIT_PASS }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -31,8 +31,8 @@ public class AccessPlan {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "plan_type", length = 16, updatable = false)
-    private PlanType planType;
+    @Column(name = "pass_type", length = 16, updatable = false)
+    private PassType passType;
 
     @Column(name = "valid_until")
     private Instant validUntil;
@@ -43,14 +43,14 @@ public class AccessPlan {
     @Column(name = "archived_at")
     private Instant archivedAt;
 
-    protected AccessPlan() {}
+    protected Pass() {}
 
-    public AccessPlan(UUID organizationId, UUID gymId, String name, PlanType planType, Instant validUntil,
+    public Pass(UUID organizationId, UUID gymId, String name, PassType passType, Instant validUntil,
                       Integer visitLimit) {
         this.organizationId = organizationId;
         this.gymId = gymId;
         this.name = name;
-        this.planType = planType;
+        this.passType = passType;
         this.validUntil = validUntil;
         this.visitLimit = visitLimit;
     }
@@ -71,8 +71,8 @@ public class AccessPlan {
         return name;
     }
 
-    public PlanType getPlanType() {
-        return planType;
+    public PassType getPassType() {
+        return passType;
     }
 
     public Instant getValidUntil() {

@@ -8,6 +8,9 @@ spring:
   sql:
     init:
       mode: always
+      schema-locations:
+        - classpath:rename-pass-tables-postgresql.sql
+        - classpath:schema.sql
   jpa:
     open-in-view: false
     hibernate:

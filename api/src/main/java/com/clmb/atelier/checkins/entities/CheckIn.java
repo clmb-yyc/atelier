@@ -20,17 +20,17 @@ public class CheckIn {
     @Column(name = "gym_id", nullable = false)
     private UUID gymId;
 
-    @Column(name = "member_pass_id", nullable = false)
-    private UUID memberPassId;
+    @Column(name = "user_pass_id", nullable = false)
+    private UUID userPassId;
 
     @Column(name = "checked_in_at", nullable = false)
     private Instant checkedInAt;
 
     protected CheckIn() {}
 
-    public CheckIn(UUID gymId, UUID memberPassId, Instant checkedInAt) {
+    public CheckIn(UUID gymId, UUID userPassId, Instant checkedInAt) {
         this.gymId = gymId;
-        this.memberPassId = memberPassId;
+        this.userPassId = userPassId;
         this.checkedInAt = checkedInAt;
     }
 
@@ -42,8 +42,8 @@ public class CheckIn {
         return gymId;
     }
 
-    public UUID getMemberPassId() {
-        return memberPassId;
+    public UUID getUserPassId() {
+        return userPassId;
     }
 
     public Instant getCheckedInAt() {

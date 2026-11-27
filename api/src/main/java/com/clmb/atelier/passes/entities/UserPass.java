@@ -1,4 +1,4 @@
-package com.clmb.atelier.access.entities;
+package com.clmb.atelier.passes.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,14 +11,14 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "member_passes")
-public class MemberPass {
+@Table(name = "user_passes")
+public class UserPass {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "access_plan_id", nullable = false)
-    private UUID accessPlanId;
+    @Column(name = "pass_id", nullable = false)
+    private UUID passId;
 
     @Column(name = "account_id", nullable = false)
     private UUID accountId;
@@ -32,10 +32,10 @@ public class MemberPass {
     @Column(name = "revoked_at")
     private Instant revokedAt;
 
-    protected MemberPass() {}
+    protected UserPass() {}
 
-    public MemberPass(UUID accessPlanId, UUID accountId, Instant startsAt, Instant expiresAt) {
-        this.accessPlanId = accessPlanId;
+    public UserPass(UUID passId, UUID accountId, Instant startsAt, Instant expiresAt) {
+        this.passId = passId;
         this.accountId = accountId;
         this.startsAt = startsAt;
         this.expiresAt = expiresAt;
@@ -45,8 +45,8 @@ public class MemberPass {
         return id;
     }
 
-    public UUID getAccessPlanId() {
-        return accessPlanId;
+    public UUID getPassId() {
+        return passId;
     }
 
     public UUID getAccountId() {

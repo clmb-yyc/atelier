@@ -1,9 +1,9 @@
 package com.clmb.atelier;
 
-import com.clmb.atelier.access.AccessPlanRepository;
-import com.clmb.atelier.access.MemberPassRepository;
-import com.clmb.atelier.access.entities.AccessPlan;
-import com.clmb.atelier.access.entities.MemberPass;
+import com.clmb.atelier.passes.PassRepository;
+import com.clmb.atelier.passes.UserPassRepository;
+import com.clmb.atelier.passes.entities.Pass;
+import com.clmb.atelier.passes.entities.UserPass;
 import com.clmb.atelier.checkins.CheckInRepository;
 import com.clmb.atelier.gyms.GymRepository;
 import com.clmb.atelier.gyms.GymStaffRepository;
@@ -45,15 +45,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class MembershipFlowTests {
+class PassFlowTests {
     @Autowired MockMvc mvc;
     @Autowired JsonMapper json;
     @Autowired OrganizationRepository organizations;
     @Autowired OrganizationAdminRepository admins;
     @Autowired GymRepository gyms;
     @Autowired GymStaffRepository gymStaff;
-    @Autowired AccessPlanRepository plans;
-    @Autowired MemberPassRepository passes;
+    @Autowired PassRepository plans;
+    @Autowired UserPassRepository passes;
     @Autowired CheckInRepository checkIns;
 
     private final UUID admin = UUID.randomUUID();
@@ -64,7 +64,7 @@ class MembershipFlowTests {
     private UUID gymId;
     private UUID siblingGymId;
     private UUID otherGymId;
-    private String planPath;
+    private String passPath;
 
     @BeforeEach
     void createGyms() {
@@ -75,26 +75,26 @@ class MembershipFlowTests {
         siblingGymId = gyms.save(new Gym(organizationId, "North")).getId();
         otherGymId = gyms.save(new Gym(otherOrganization, "West")).getId();
         gymStaff.save(new GymStaff(otherGymId, otherStaff));
-        planPath = "/api/organizations/" + organizationId + "/access-plans";
+        passPath = "/api/organizations/" + organizationId + "/passes";
     }
 
     @Test
     void gymStaffCanUseMembersPassAtTheirGymAfterPlanArchival() throws Exception {
-        postJson(planPath, member, Map.of("name", "Unauthorized")).andExpect(status().isForbidden());
-        postJson(planPath, admin, Map.of("name", "Other gym", "gymId", otherGymId, "planType", "DAY_PASS"))
+        postJson(passPath, member, Map.of("name", "Unauthorized")).andExpect(status().isForbidden());
+        postJson(passPath, admin, Map.of("name", "Other gym", "gymId", otherGymId, "passType", "DAY_PASS"))
                 .andExpect(status().isNotFound());
-        UUID plan = createdId(postJson(planPath, admin,
-                Map.of("name", "One visit", "gymId", gymId, "planType", "DAY_PASS", "visitLimit", 1)));
-        String issuePath = planPath + "/" + plan + "/passes";
+        UUID plan = createdId(postJson(passPath, admin,
+                Map.of("name", "One visit", "gymId", gymId, "passType", "DAY_PASS", "visitLimit", 1)));
+        String issuePath = passPath + "/" + plan + "/user-passes";
         postJson(issuePath, admin, Map.of("accountId", member)).andExpect(status().isBadRequest());
-        UUID pass = issuePass(plan);
+        UUID pass = issueUserPass(plan);
 
-        mvc.perform(get("/api/me/member-passes").with(jwt().jwt(builder -> builder.subject(member.toString()))))
+        mvc.perform(get("/api/me/user-passes").with(jwt().jwt(builder -> builder.subject(member.toString()))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(pass.toString()));
-        mvc.perform(get("/api/me/member-passes").with(jwt().jwt(builder -> builder.subject(admin.toString()))))
+        mvc.perform(get("/api/me/user-passes").with(jwt().jwt(builder -> builder.subject(admin.toString()))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
 
-        deleteAsAdmin(planPath + "/" + plan).andExpect(status().isNoContent());
+        deleteAsAdmin(passPath + "/" + plan).andExpect(status().isNoContent());
         postJson(issuePath, admin, Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600)))
                 .andExpect(status().isConflict());
         checkIn(gymId, pass, member).andExpect(status().isForbidden());
@@ -109,37 +109,37 @@ class MembershipFlowTests {
         checkIn(siblingGymId, pass, admin).andExpect(status().isForbidden());
         checkIn(otherGymId, pass, otherStaff).andExpect(status().isNotFound());
         checkIn(gymId, pass, staff).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.memberPassId").value(pass.toString()));
+                .andExpect(jsonPath("$.userPassId").value(pass.toString()));
         checkIn(gymId, pass, staff).andExpect(status().isConflict());
-        assertThat(checkIns.countByMemberPassId(pass)).isEqualTo(1);
+        assertThat(checkIns.countByUserPassId(pass)).isEqualTo(1);
     }
 
     @Test
     void rejectsClosedIssuanceAndInactivePasses() throws Exception {
         Instant now = Instant.now();
-        UUID closedPlan = plans.save(new AccessPlan(organizationId, null, "Closed", AccessPlan.PlanType.MEMBERSHIP,
+        UUID closedPlan = plans.save(new Pass(organizationId, null, "Closed", Pass.PassType.MEMBERSHIP,
                 now.minusSeconds(60), null)).getId();
-        postJson(planPath + "/" + closedPlan + "/passes", admin,
+        postJson(passPath + "/" + closedPlan + "/user-passes", admin,
                 Map.of("accountId", member, "expiresAt", now.plusSeconds(3600))).andExpect(status().isConflict());
 
-        UUID expired = passes.save(new MemberPass(closedPlan, member, now.minusSeconds(120), now.minusSeconds(60))).getId();
-        UUID future = passes.save(new MemberPass(closedPlan, member, now.plusSeconds(60), now.plusSeconds(120))).getId();
+        UUID expired = passes.save(new UserPass(closedPlan, member, now.minusSeconds(120), now.minusSeconds(60))).getId();
+        UUID future = passes.save(new UserPass(closedPlan, member, now.plusSeconds(60), now.plusSeconds(120))).getId();
         checkIn(gymId, expired, admin).andExpect(status().isConflict());
         checkIn(gymId, future, admin).andExpect(status().isConflict());
 
-        UUID pass = passes.save(new MemberPass(closedPlan, member, now.minusSeconds(60), now.plusSeconds(3600))).getId();
+        UUID pass = passes.save(new UserPass(closedPlan, member, now.minusSeconds(60), now.plusSeconds(3600))).getId();
         checkIn(siblingGymId, pass, admin).andExpect(status().isCreated());
-        deleteAsAdmin("/api/organizations/" + organizationId + "/member-passes/" + pass)
+        deleteAsAdmin("/api/organizations/" + organizationId + "/user-passes/" + pass)
                 .andExpect(status().isNoContent());
         checkIn(siblingGymId, pass, admin).andExpect(status().isConflict());
-        assertThat(checkIns.countByMemberPassId(pass)).isEqualTo(1);
+        assertThat(checkIns.countByUserPassId(pass)).isEqualTo(1);
     }
 
     @Test
     void concurrentCheckInsCanSpendTheLastVisitOnlyOnce() throws Exception {
-        UUID plan = createdId(postJson(planPath, admin,
-                Map.of("name", "Chain pass", "planType", "VISIT_PASS", "visitLimit", 1)));
-        UUID pass = issuePass(plan);
+        UUID plan = createdId(postJson(passPath, admin,
+                Map.of("name", "Chain pass", "passType", "VISIT_PASS", "visitLimit", 1)));
+        UUID pass = issueUserPass(plan);
         CyclicBarrier start = new CyclicBarrier(2);
         try (var executor = Executors.newFixedThreadPool(2)) {
             var first = executor.submit(checkInWhenReady(start, gymId, pass));
@@ -147,48 +147,48 @@ class MembershipFlowTests {
             assertThat(List.of(first.get(15, TimeUnit.SECONDS), second.get(15, TimeUnit.SECONDS)))
                     .containsExactlyInAnyOrder(201, 409);
         }
-        assertThat(checkIns.countByMemberPassId(pass)).isEqualTo(1);
+        assertThat(checkIns.countByUserPassId(pass)).isEqualTo(1);
     }
 
     @Test
     void overlappingMembershipBlocksNewPassesAndAnotherMembership() throws Exception {
-        UUID membership = createPlan("Monthly", "MEMBERSHIP");
-        UUID dayPass = createPlan("Day pass", "DAY_PASS");
+        UUID membership = createPass("Monthly", "MEMBERSHIP");
+        UUID dayPass = createPass("Day pass", "DAY_PASS");
         Instant expiresAt = Instant.now().plusSeconds(3600);
         Map<String, ?> issue = Map.of("accountId", member, "expiresAt", expiresAt);
-        UUID currentPass = createdId(postJson(planPath + "/" + membership + "/passes", admin, issue));
+        UUID currentPass = createdId(postJson(passPath + "/" + membership + "/user-passes", admin, issue));
 
         for (UUID plan : List.of(membership, dayPass)) {
-            postJson(planPath + "/" + plan + "/passes", admin, issue)
+            postJson(passPath + "/" + plan + "/user-passes", admin, issue)
                     .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EXISTING_MEMBERSHIP"))
-                    .andExpect(jsonPath("$.conflictingPassIds[0]").value(currentPass.toString()));
+                    .andExpect(jsonPath("$.conflictingUserPassIds[0]").value(currentPass.toString()));
         }
 
-        postJson(planPath + "/" + dayPass + "/passes", admin, Map.of("accountId", member,
+        postJson(passPath + "/" + dayPass + "/user-passes", admin, Map.of("accountId", member,
                         "startsAt", expiresAt.plusSeconds(1), "expiresAt", expiresAt.plusSeconds(3600)))
                 .andExpect(status().isCreated());
     }
 
     @Test
     void unusedDayPassNeedsReviewBeforeIssuingMembership() throws Exception {
-        UUID dayPass = createPlan("Day pass", "DAY_PASS");
-        UUID membership = createPlan("Monthly", "MEMBERSHIP");
-        UUID currentPass = issuePass(dayPass);
+        UUID dayPass = createPass("Day pass", "DAY_PASS");
+        UUID membership = createPass("Monthly", "MEMBERSHIP");
+        UUID currentPass = issueUserPass(dayPass);
         assignStaff(gymId, admin, staff).andExpect(status().isCreated());
-        String issueAtGym = "/api/gyms/" + gymId + "/access-plans/" + membership + "/passes";
+        String issueAtGym = "/api/gyms/" + gymId + "/passes/" + membership + "/user-passes";
         Map<String, ?> request = Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600));
 
         postJson(issueAtGym, staff, request)
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EXISTING_PASSES_REVIEW"))
-                .andExpect(jsonPath("$.conflictingPassIds[0]").value(currentPass.toString()));
+                .andExpect(jsonPath("$.conflictingUserPassIds[0]").value(currentPass.toString()));
         postJson(issueAtGym, otherStaff, request).andExpect(status().isForbidden());
         assertThat(passes.findAllByAccountIdOrderByExpiresAtDesc(member)).hasSize(1);
     }
 
     @Test
     void concurrentMembershipRequestsForDifferentPlansCannotBothSucceed() throws Exception {
-        UUID monthly = createPlan("Monthly", "MEMBERSHIP");
-        UUID yearly = createPlan("Yearly", "MEMBERSHIP");
+        UUID monthly = createPass("Monthly", "MEMBERSHIP");
+        UUID yearly = createPass("Yearly", "MEMBERSHIP");
         Map<String, ?> request = Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600));
         CyclicBarrier start = new CyclicBarrier(2);
         try (var executor = Executors.newFixedThreadPool(2)) {
@@ -203,12 +203,12 @@ class MembershipFlowTests {
     private Callable<Integer> issueWhenReady(CyclicBarrier start, UUID plan, Map<String, ?> request) {
         return () -> {
             start.await(10, TimeUnit.SECONDS);
-            return postJson(planPath + "/" + plan + "/passes", admin, request).andReturn().getResponse().getStatus();
+            return postJson(passPath + "/" + plan + "/user-passes", admin, request).andReturn().getResponse().getStatus();
         };
     }
 
-    private UUID createPlan(String name, String planType) throws Exception {
-        return createdId(postJson(planPath, admin, Map.of("name", name, "planType", planType)));
+    private UUID createPass(String name, String passType) throws Exception {
+        return createdId(postJson(passPath, admin, Map.of("name", name, "passType", passType)));
     }
 
     private Callable<Integer> checkInWhenReady(CyclicBarrier start, UUID targetGym, UUID pass) {
@@ -218,13 +218,13 @@ class MembershipFlowTests {
         };
     }
 
-    private UUID issuePass(UUID plan) throws Exception {
-        return createdId(postJson(planPath + "/" + plan + "/passes", admin,
+    private UUID issueUserPass(UUID plan) throws Exception {
+        return createdId(postJson(passPath + "/" + plan + "/user-passes", admin,
                 Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600))));
     }
 
     private ResultActions checkIn(UUID targetGym, UUID pass, UUID actor) throws Exception {
-        return postJson("/api/gyms/" + targetGym + "/check-ins", actor, Map.of("memberPassId", pass));
+        return postJson("/api/gyms/" + targetGym + "/check-ins", actor, Map.of("userPassId", pass));
     }
 
     private ResultActions assignStaff(UUID targetGym, UUID actor, UUID account) throws Exception {
