@@ -1,6 +1,6 @@
 package com.clmb.atelier.routes;
 
-import com.clmb.atelier.walls.Wall;
+import com.clmb.atelier.walls.entities.Wall;
 
 import java.time.Instant;
 import java.util.UUID;

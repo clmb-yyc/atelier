@@ -1,5 +1,7 @@
 package com.clmb.atelier.access;
 
+import com.clmb.atelier.access.entities.AccessPlan;
+import com.clmb.atelier.access.entities.MemberPass;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

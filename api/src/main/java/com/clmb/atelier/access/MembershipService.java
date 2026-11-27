@@ -1,7 +1,9 @@
 package com.clmb.atelier.access;
 
+import com.clmb.atelier.access.entities.AccessPlan;
+import com.clmb.atelier.access.entities.MemberPass;
 import com.clmb.atelier.administration.AdministrationAccess;
-import com.clmb.atelier.gyms.Gym;
+import com.clmb.atelier.gyms.entities.Gym;
 import com.clmb.atelier.organizations.OrganizationRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

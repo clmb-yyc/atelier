@@ -1,5 +1,6 @@
 package com.clmb.atelier.gyms;
 
+import com.clmb.atelier.gyms.entities.GymStaff;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

@@ -1,11 +1,12 @@
 package com.clmb.atelier.checkins;
 
-import com.clmb.atelier.access.AccessPlan;
 import com.clmb.atelier.access.AccessPlanRepository;
-import com.clmb.atelier.access.MemberPass;
 import com.clmb.atelier.access.MemberPassRepository;
+import com.clmb.atelier.access.entities.AccessPlan;
+import com.clmb.atelier.access.entities.MemberPass;
 import com.clmb.atelier.administration.AdministrationAccess;
-import com.clmb.atelier.gyms.Gym;
+import com.clmb.atelier.checkins.entities.CheckIn;
+import com.clmb.atelier.gyms.entities.Gym;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;

@@ -1,7 +1,8 @@
 package com.clmb.atelier.routes;
 
 import com.clmb.atelier.administration.AdministrationService;
-import com.clmb.atelier.walls.Wall;
+import com.clmb.atelier.routes.entities.Route;
+import com.clmb.atelier.walls.entities.Wall;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;

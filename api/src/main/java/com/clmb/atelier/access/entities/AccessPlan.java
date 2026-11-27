@@ -1,4 +1,4 @@
-package com.clmb.atelier.access;
+package com.clmb.atelier.access.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

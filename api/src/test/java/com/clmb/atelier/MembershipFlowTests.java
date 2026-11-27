@@ -1,18 +1,18 @@
 package com.clmb.atelier;
 
-import com.clmb.atelier.access.AccessPlan;
 import com.clmb.atelier.access.AccessPlanRepository;
-import com.clmb.atelier.access.MemberPass;
 import com.clmb.atelier.access.MemberPassRepository;
+import com.clmb.atelier.access.entities.AccessPlan;
+import com.clmb.atelier.access.entities.MemberPass;
 import com.clmb.atelier.checkins.CheckInRepository;
-import com.clmb.atelier.gyms.Gym;
 import com.clmb.atelier.gyms.GymRepository;
-import com.clmb.atelier.gyms.GymStaff;
 import com.clmb.atelier.gyms.GymStaffRepository;
-import com.clmb.atelier.organizations.Organization;
-import com.clmb.atelier.organizations.OrganizationAdmin;
+import com.clmb.atelier.gyms.entities.Gym;
+import com.clmb.atelier.gyms.entities.GymStaff;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
 import com.clmb.atelier.organizations.OrganizationRepository;
+import com.clmb.atelier.organizations.entities.Organization;
+import com.clmb.atelier.organizations.entities.OrganizationAdmin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

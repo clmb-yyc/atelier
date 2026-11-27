@@ -1,7 +1,8 @@
 package com.clmb.atelier.organizations;
 
 import com.clmb.atelier.administration.AdministrationService;
-import com.clmb.atelier.gyms.Gym;
+import com.clmb.atelier.gyms.entities.Gym;
+import com.clmb.atelier.organizations.entities.Organization;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;

@@ -1,4 +1,4 @@
-package com.clmb.atelier.routes;
+package com.clmb.atelier.routes.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

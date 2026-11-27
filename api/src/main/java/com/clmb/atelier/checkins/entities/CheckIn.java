@@ -1,4 +1,4 @@
-package com.clmb.atelier.checkins;
+package com.clmb.atelier.checkins.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

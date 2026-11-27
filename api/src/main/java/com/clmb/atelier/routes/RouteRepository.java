@@ -1,5 +1,6 @@
 package com.clmb.atelier.routes;
 
+import com.clmb.atelier.routes.entities.Route;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

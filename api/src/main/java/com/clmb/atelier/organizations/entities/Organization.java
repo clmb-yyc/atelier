@@ -1,4 +1,4 @@
-package com.clmb.atelier.gyms;
+package com.clmb.atelier.organizations.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,14 +11,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "gyms")
-public class Gym {
+@Table(name = "organizations")
+public class Organization {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
-    @Column(name = "organization_id", nullable = false)
-    private UUID organizationId;
 
     @Column(nullable = false)
     private String name;
@@ -26,19 +23,14 @@ public class Gym {
     @Column(name = "archived_at")
     private Instant archivedAt;
 
-    protected Gym() {}
+    protected Organization() {}
 
-    public Gym(UUID organizationId, String name) {
-        this.organizationId = organizationId;
+    public Organization(String name) {
         this.name = name;
     }
 
     public UUID getId() {
         return id;
-    }
-
-    public UUID getOrganizationId() {
-        return organizationId;
     }
 
     public String getName() {

@@ -1,4 +1,4 @@
-package com.clmb.atelier.walls;
+package com.clmb.atelier.walls.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

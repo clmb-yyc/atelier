@@ -1,14 +1,14 @@
 package com.clmb.atelier.administration;
 
-import com.clmb.atelier.gyms.Gym;
-import com.clmb.atelier.gyms.GymAdmin;
 import com.clmb.atelier.gyms.GymAdminRepository;
 import com.clmb.atelier.gyms.GymRepository;
-import com.clmb.atelier.gyms.GymStaff;
 import com.clmb.atelier.gyms.GymStaffRepository;
-import com.clmb.atelier.organizations.OrganizationAdmin;
+import com.clmb.atelier.gyms.entities.Gym;
+import com.clmb.atelier.gyms.entities.GymAdmin;
+import com.clmb.atelier.gyms.entities.GymStaff;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
 import com.clmb.atelier.organizations.OrganizationRepository;
+import com.clmb.atelier.organizations.entities.OrganizationAdmin;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;

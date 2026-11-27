@@ -1,17 +1,17 @@
 package com.clmb.atelier;
 
-import com.clmb.atelier.gyms.Gym;
 import com.clmb.atelier.gyms.GymRepository;
-import com.clmb.atelier.gyms.GymStaff;
 import com.clmb.atelier.gyms.GymStaffRepository;
-import com.clmb.atelier.organizations.Organization;
-import com.clmb.atelier.organizations.OrganizationAdmin;
+import com.clmb.atelier.gyms.entities.Gym;
+import com.clmb.atelier.gyms.entities.GymStaff;
 import com.clmb.atelier.organizations.OrganizationAdminRepository;
 import com.clmb.atelier.organizations.OrganizationRepository;
-import com.clmb.atelier.routes.Route;
+import com.clmb.atelier.organizations.entities.Organization;
+import com.clmb.atelier.organizations.entities.OrganizationAdmin;
 import com.clmb.atelier.routes.RouteRepository;
-import com.clmb.atelier.walls.Wall;
+import com.clmb.atelier.routes.entities.Route;
 import com.clmb.atelier.walls.WallRepository;
+import com.clmb.atelier.walls.entities.Wall;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

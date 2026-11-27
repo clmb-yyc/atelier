@@ -1,5 +1,6 @@
 package com.clmb.atelier.checkins;
 
+import com.clmb.atelier.checkins.entities.CheckIn;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;

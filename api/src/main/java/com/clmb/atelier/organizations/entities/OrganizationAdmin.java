@@ -1,4 +1,4 @@
-package com.clmb.atelier.organizations;
+package com.clmb.atelier.organizations.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
