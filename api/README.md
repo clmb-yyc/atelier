@@ -9,7 +9,6 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 | `organizations` | `id` (PK), `name`, `archived_at` (optional) |
 | `gyms` | `id` (PK), `organization_id`, `name`, `archived_at` (optional) |
 | `organization_admins` | `organization_id` and `user_id` (composite PK) |
-| `gym_admins` | `gym_id` and `user_id` (composite PK) |
 | `gym_staff` | `gym_id` and `user_id` (composite PK) |
 | `walls` | `id` (PK), `gym_id`, `name`, `discipline` (`BOULDER` or `ROPE`), `archived_at` (optional) |
 | `routes` | `id` (PK), `wall_id`, `name` (optional), `grade` (text), `set_at`, `removed_at` (optional) |
@@ -17,7 +16,7 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 | `user_passes` | `id` (PK), `pass_id`, `user_id`, `starts_at`, `expires_at`, `revoked_at` (optional) |
 | `check_ins` | `id` (PK), `gym_id`, `user_pass_id`, `checked_in_at` |
 
-- An organization can operate multiple gyms. Admin assignments are scoped to an organization, and staff assignments are scoped to a gym.
+- An organization can operate multiple gyms. Organization admins manage all gyms in their organization. Staff assignments are scoped to a gym.
 - A route inherits its discipline from its wall and stores its own grade. Archiving a wall preserves its routes.
 - A pass with no `gym_id` covers every gym in its organization. Each user pass has its own required expiry.
 - Archiving a pass closes it to new issuance. Existing user passes still reference it for scope and any visit limit.
@@ -35,11 +34,10 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | `POST /api/organizations` | Auth `STAFF` | `name` | `201 Created` with `id` and `name`. The caller becomes the first organization admin. |
 | `POST /api/organizations/{organizationId}/gyms` | Organization admin | `name` | `201 Created` with `id`, `organizationId`, and `name`. |
 | `PUT /api/organizations/{organizationId}/admins/{userId}` | Organization admin | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
-| `PUT /api/gyms/{gymId}/admins/{userId}` | Admin of the gym's organization | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
-| `PUT /api/gyms/{gymId}/staff/{userId}` | Gym admin or admin of its organization | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
-| `POST /api/gyms/{gymId}/walls` | Gym admin or admin of its organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. |
-| `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Gym admin or admin of its organization | `grade`, optional `name` | `201 Created` with `id`, `wallId`, `name`, `grade`, and `setAt`. |
-| `GET /api/gyms/{gymId}/routes` | Staff assigned to the gym, a gym admin, or an admin of its organization | None | `200 OK` with an array of active routes, newest first. Each item includes `id`, `wallId`, `wallName`, `discipline`, `name`, `grade`, and `setAt`. |
+| `PUT /api/gyms/{gymId}/staff/{userId}` | Admin of the gym's organization | None | `201 Created` for a new assignment or `204 No Content` if it already exists. Both have an empty body. |
+| `POST /api/gyms/{gymId}/walls` | Admin of the gym's organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. |
+| `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Admin of the gym's organization | `grade`, optional `name` | `201 Created` with `id`, `wallId`, `name`, `grade`, and `setAt`. |
+| `GET /api/gyms/{gymId}/routes` | Staff assigned to the gym or an admin of its organization | None | `200 OK` with an array of active routes, newest first. Each item includes `id`, `wallId`, `wallName`, `discipline`, `name`, `grade`, and `setAt`. |
 
 ### Passes and user passes
 
@@ -49,7 +47,7 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | `GET /api/organizations/{organizationId}/passes` | Organization admin | None | `200 OK` with an array of passes, including archived passes, ordered by name. |
 | `DELETE /api/organizations/{organizationId}/passes/{passId}` | Organization admin | None | `204 No Content`. Archives the pass, closing it to new issuance. |
 | `POST /api/organizations/{organizationId}/passes/{passId}/user-passes` | Organization admin | `userId`, `expiresAt`, optional `startsAt` (defaults to now) | `201 Created` with a user pass. |
-| `POST /api/gyms/{gymId}/passes/{passId}/user-passes` | Gym staff, gym admin, or admin of its organization | `userId`, `expiresAt`, optional `startsAt` (defaults to now) | `201 Created` with a user pass. The pass must cover that gym. |
+| `POST /api/gyms/{gymId}/passes/{passId}/user-passes` | Staff assigned to the gym or an admin of its organization | `userId`, `expiresAt`, optional `startsAt` (defaults to now) | `201 Created` with a user pass. The pass must cover that gym. |
 | `DELETE /api/organizations/{organizationId}/user-passes/{userPassId}` | Organization admin | None | `204 No Content`. Revokes the user pass. |
 | `GET /api/me/user-passes` | Signed-in account | None | `200 OK` with an array of the caller's user passes, latest expiry first. |
 
@@ -62,7 +60,7 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 
 | Method and path | Who can call it | Request body | Success response |
 | --- | --- | --- | --- |
-| `POST /api/gyms/{gymId}/check-ins` | Staff assigned to the gym, a gym admin, or an admin of its organization | `userPassId` | `201 Created` with `id`, `gymId`, `userPassId`, and `checkedInAt`. Each success records one visit for the member who holds the pass. |
+| `POST /api/gyms/{gymId}/check-ins` | Staff assigned to the gym or an admin of its organization | `userPassId` | `201 Created` with `id`, `gymId`, `userPassId`, and `checkedInAt`. Each success records one visit for the member who holds the pass. |
 
 ### Error responses
 

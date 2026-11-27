@@ -131,13 +131,13 @@ class AtelierApplicationTests {
     @Test
     void organizationAdminsCanOnboardGymsAndGrantScopedAccess() throws Exception {
         UUID organizationAdminId = UUID.randomUUID();
-        UUID gymAdminId = UUID.randomUUID();
+        UUID employeeId = UUID.randomUUID();
         String creator = token("ROLE_STAFF");
         String organizationAdmin = token("ROLE_VIEWER", organizationAdminId);
-        String gymAdmin = token("ROLE_VIEWER", gymAdminId);
+        String employee = token("ROLE_VIEWER", employeeId);
         String otherStaff = token("ROLE_STAFF");
 
-        postJson("/api/organizations", gymAdmin, "{\"name\":\"Outside Co\"}")
+        postJson("/api/organizations", employee, "{\"name\":\"Outside Co\"}")
                 .andExpect(status().isForbidden());
         String organizationId = createdId(postJson("/api/organizations", creator, "{\"name\":\"Climbing Co\"}"));
         String otherOrganizationId = createdId(postJson("/api/organizations", otherStaff, "{\"name\":\"Other Co\"}"));
@@ -152,29 +152,28 @@ class AtelierApplicationTests {
         String otherGymId = createdId(postJson("/api/organizations/" + otherOrganizationId + "/gyms",
                 otherStaff, "{\"name\":\"West\"}"));
 
-        String gymAdminPath = "/api/gyms/" + gymId + "/admins/" + gymAdminId;
-        grant(gymAdminPath, otherStaff).andExpect(status().isForbidden());
-        grant(gymAdminPath, organizationAdmin).andExpect(status().isCreated());
-        grant(gymAdminPath, organizationAdmin).andExpect(status().isNoContent());
-        grant("/api/gyms/" + gymId + "/admins/" + UUID.randomUUID(), gymAdmin)
-                .andExpect(status().isForbidden());
-        grant("/api/organizations/" + organizationId + "/admins/" + gymAdminId, gymAdmin)
+        grant("/api/gyms/" + gymId + "/admins/" + employeeId, organizationAdmin).andExpect(status().isNotFound());
+        String gymStaffPath = "/api/gyms/" + gymId + "/staff/" + employeeId;
+        grant(gymStaffPath, otherStaff).andExpect(status().isForbidden());
+        grant(gymStaffPath, organizationAdmin).andExpect(status().isCreated());
+        grant(gymStaffPath, organizationAdmin).andExpect(status().isNoContent());
+        grant("/api/organizations/" + organizationId + "/admins/" + employeeId, employee)
                 .andExpect(status().isForbidden());
 
         String wall = "{\"name\":\"Slab\",\"discipline\":\"BOULDER\"}";
         String gymWallsPath = "/api/gyms/" + gymId + "/walls";
-        String wallId = createdId(postJson(gymWallsPath, gymAdmin, wall));
+        String wallId = createdId(postJson(gymWallsPath, organizationAdmin, wall));
         String siblingWallId = createdId(postJson("/api/gyms/" + siblingGymId + "/walls", organizationAdmin, wall));
-        postJson("/api/gyms/" + siblingGymId + "/walls", gymAdmin, wall).andExpect(status().isForbidden());
+        postJson(gymWallsPath, employee, wall).andExpect(status().isForbidden());
         postJson("/api/gyms/" + otherGymId + "/walls", organizationAdmin, wall).andExpect(status().isForbidden());
 
-        postJson(gymWallsPath + "/" + wallId + "/routes", gymAdmin, "{\"grade\":\"V4\"}")
+        postJson(gymWallsPath + "/" + wallId + "/routes", organizationAdmin, "{\"grade\":\"V4\"}")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.wallId").value(wallId))
                 .andExpect(jsonPath("$.grade").value("V4"));
-        postJson(gymWallsPath + "/" + siblingWallId + "/routes", gymAdmin, "{\"grade\":\"V4\"}")
+        postJson(gymWallsPath + "/" + siblingWallId + "/routes", organizationAdmin, "{\"grade\":\"V4\"}")
                 .andExpect(status().isNotFound());
-        postJson(gymWallsPath + "/" + wallId + "/routes", gymAdmin, "{\"grade\":\" \"}")
+        postJson(gymWallsPath + "/" + wallId + "/routes", organizationAdmin, "{\"grade\":\" \"}")
                 .andExpect(status().isBadRequest());
     }
 

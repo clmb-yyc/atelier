@@ -28,12 +28,6 @@ public class AdministrationController {
         return grantResponse(administration.grantOrganizationAdmin(userId(jwt), organizationId, userId));
     }
 
-    @PutMapping("/gyms/{gymId}/admins/{userId}")
-    public ResponseEntity<Void> grantGymAdmin(@AuthenticationPrincipal Jwt jwt,
-                                              @PathVariable UUID gymId, @PathVariable UUID userId) {
-        return grantResponse(administration.grantGymAdmin(userId(jwt), gymId, userId));
-    }
-
     @PutMapping("/gyms/{gymId}/staff/{userId}")
     public ResponseEntity<Void> grantGymStaff(@AuthenticationPrincipal Jwt jwt,
                                               @PathVariable UUID gymId, @PathVariable UUID userId) {

@@ -1,6 +1,5 @@
 package com.clmb.atelier.administration;
 
-import com.clmb.atelier.gyms.GymAdminRepository;
 import com.clmb.atelier.gyms.GymRepository;
 import com.clmb.atelier.gyms.GymStaffRepository;
 import com.clmb.atelier.gyms.entities.Gym;
@@ -25,7 +24,6 @@ public class AdministrationService {
     private final OrganizationRepository organizations;
     private final OrganizationAdminRepository organizationAdmins;
     private final GymRepository gyms;
-    private final GymAdminRepository gymAdmins;
     private final GymStaffRepository staff;
     private final WallRepository walls;
     private final RouteRepository routes;
@@ -33,13 +31,12 @@ public class AdministrationService {
 
     public AdministrationService(
             OrganizationRepository organizations, OrganizationAdminRepository organizationAdmins,
-            GymRepository gyms, GymAdminRepository gymAdmins, GymStaffRepository staff,
+            GymRepository gyms, GymStaffRepository staff,
             WallRepository walls, RouteRepository routes,
             AdministrationAccess access) {
         this.organizations = organizations;
         this.organizationAdmins = organizationAdmins;
         this.gyms = gyms;
-        this.gymAdmins = gymAdmins;
         this.staff = staff;
         this.walls = walls;
         this.routes = routes;
@@ -62,19 +59,13 @@ public class AdministrationService {
         return organizationAdmins.grant(organizationId, userId) == 1;
     }
 
-    public boolean grantGymAdmin(UUID actorId, UUID gymId, UUID userId) {
-        Gym gym = access.requireActiveGym(gymId);
-        access.requireOrganizationAdmin(actorId, gym.getOrganizationId());
-        return gymAdmins.grant(gymId, userId) == 1;
-    }
-
     public boolean grantGymStaff(UUID actorId, UUID gymId, UUID userId) {
-        access.requireGymAdmin(actorId, gymId);
+        access.requireOrganizationAdminForGym(actorId, gymId);
         return staff.grant(gymId, userId) == 1;
     }
 
     public Wall createWall(UUID actorId, UUID gymId, String name, Wall.Discipline discipline) {
-        access.requireGymAdmin(actorId, gymId);
+        access.requireOrganizationAdminForGym(actorId, gymId);
         if (discipline == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "discipline is required");
         }
@@ -82,7 +73,7 @@ public class AdministrationService {
     }
 
     public Route createRoute(UUID actorId, UUID gymId, UUID wallId, String name, String grade) {
-        access.requireGymAdmin(actorId, gymId);
+        access.requireOrganizationAdminForGym(actorId, gymId);
         walls.findByIdAndGymIdAndArchivedAtIsNull(wallId, gymId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wall not found in this gym"));
         String routeName = name == null || name.isBlank() ? null : name.strip();
