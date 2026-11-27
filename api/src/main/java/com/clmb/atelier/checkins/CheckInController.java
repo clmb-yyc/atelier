@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.UUID;
 
-import static com.clmb.atelier.config.JwtAccount.accountId;
+import static com.clmb.atelier.config.JwtUser.userId;
 
 @RestController
 public class CheckInController {
@@ -27,7 +27,7 @@ public class CheckInController {
     @ResponseStatus(HttpStatus.CREATED)
     public CheckInResponse checkIn(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,
                                    @RequestBody CheckInRequest request) {
-        CheckIn checkIn = checkIns.checkIn(accountId(jwt), gymId, request.userPassId());
+        CheckIn checkIn = checkIns.checkIn(userId(jwt), gymId, request.userPassId());
         return new CheckInResponse(checkIn.getId(), checkIn.getGymId(), checkIn.getUserPassId(),
                 checkIn.getCheckedInAt());
     }

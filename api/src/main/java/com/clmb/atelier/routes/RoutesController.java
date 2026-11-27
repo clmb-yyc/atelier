@@ -18,7 +18,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import static com.clmb.atelier.config.JwtAccount.accountId;
+import static com.clmb.atelier.config.JwtUser.userId;
 
 @RestController
 @RequestMapping("/api/gyms/{gymId}")
@@ -33,14 +33,14 @@ public class RoutesController {
 
     @GetMapping("/routes")
     public List<RouteListItem> listRoutes(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId) {
-        return routes.listActiveRoutes(accountId(jwt), gymId);
+        return routes.listActiveRoutes(userId(jwt), gymId);
     }
 
     @PostMapping("/walls")
     @ResponseStatus(HttpStatus.CREATED)
     public WallResponse createWall(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,
                                    @RequestBody WallRequest request) {
-        Wall wall = administration.createWall(accountId(jwt), gymId, request.name(), request.discipline());
+        Wall wall = administration.createWall(userId(jwt), gymId, request.name(), request.discipline());
         return new WallResponse(wall.getId(), wall.getGymId(), wall.getName(), wall.getDiscipline());
     }
 
@@ -48,7 +48,7 @@ public class RoutesController {
     @ResponseStatus(HttpStatus.CREATED)
     public RouteResponse createRoute(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,
                                      @PathVariable UUID wallId, @RequestBody RouteRequest request) {
-        Route route = administration.createRoute(accountId(jwt), gymId, wallId, request.name(), request.grade());
+        Route route = administration.createRoute(userId(jwt), gymId, wallId, request.name(), request.grade());
         return new RouteResponse(route.getId(), route.getWallId(), route.getName(), route.getGrade(), route.getSetAt());
     }
 

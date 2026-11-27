@@ -20,8 +20,8 @@ public class UserPass {
     @Column(name = "pass_id", nullable = false)
     private UUID passId;
 
-    @Column(name = "account_id", nullable = false)
-    private UUID accountId;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @Column(name = "starts_at", nullable = false)
     private Instant startsAt;
@@ -34,9 +34,9 @@ public class UserPass {
 
     protected UserPass() {}
 
-    public UserPass(UUID passId, UUID accountId, Instant startsAt, Instant expiresAt) {
+    public UserPass(UUID passId, UUID userId, Instant startsAt, Instant expiresAt) {
         this.passId = passId;
-        this.accountId = accountId;
+        this.userId = userId;
         this.startsAt = startsAt;
         this.expiresAt = expiresAt;
     }
@@ -49,8 +49,8 @@ public class UserPass {
         return passId;
     }
 
-    public UUID getAccountId() {
-        return accountId;
+    public UUID getUserId() {
+        return userId;
     }
 
     public Instant getStartsAt() {

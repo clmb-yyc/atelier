@@ -1,5 +1,7 @@
 -- Keep existing rows and foreign keys when upgrading an older Atelier database.
 DO '
+DECLARE
+    relation_name text;
 BEGIN
     ALTER TABLE IF EXISTS access_plans RENAME TO passes;
     ALTER TABLE IF EXISTS member_passes RENAME TO user_passes;
@@ -25,7 +27,18 @@ BEGIN
         ALTER TABLE check_ins RENAME COLUMN member_pass_id TO user_pass_id;
     END IF;
 
-    ALTER INDEX IF EXISTS member_passes_account_id_idx RENAME TO user_passes_account_id_idx;
+    FOREACH relation_name IN ARRAY ARRAY[''organization_admins'', ''gym_admins'', ''gym_staff'', ''user_passes'']
+    LOOP
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = current_schema() AND table_name = relation_name AND column_name = ''account_id''
+        ) THEN
+            EXECUTE format(''ALTER TABLE %I RENAME COLUMN account_id TO user_id'', relation_name);
+        END IF;
+    END LOOP;
+
+    ALTER INDEX IF EXISTS member_passes_account_id_idx RENAME TO user_passes_user_id_idx;
+    ALTER INDEX IF EXISTS user_passes_account_id_idx RENAME TO user_passes_user_id_idx;
     ALTER INDEX IF EXISTS check_ins_member_pass_id_idx RENAME TO check_ins_user_pass_id_idx;
 END;
 ';

@@ -6,18 +6,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
-public final class JwtAccount {
-    private JwtAccount() {}
+public final class JwtUser {
+    private JwtUser() {}
 
-    public static UUID accountId(Jwt jwt) {
+    public static UUID userId(Jwt jwt) {
         String subject = jwt.getSubject();
         if (subject != null) {
             try {
                 return UUID.fromString(subject);
             } catch (IllegalArgumentException ignored) {
-                // Auth uses UUID account IDs as token subjects.
+                // Auth uses UUID user IDs as token subjects.
             }
         }
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token subject must be an account UUID");
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token subject must be a user UUID");
     }
 }

@@ -57,20 +57,20 @@ public class AdministrationService {
         return gyms.save(new Gym(organizationId, requiredText(name, "name")));
     }
 
-    public boolean grantOrganizationAdmin(UUID actorId, UUID organizationId, UUID accountId) {
+    public boolean grantOrganizationAdmin(UUID actorId, UUID organizationId, UUID userId) {
         access.requireOrganizationAdmin(actorId, organizationId);
-        return organizationAdmins.grant(organizationId, accountId) == 1;
+        return organizationAdmins.grant(organizationId, userId) == 1;
     }
 
-    public boolean grantGymAdmin(UUID actorId, UUID gymId, UUID accountId) {
+    public boolean grantGymAdmin(UUID actorId, UUID gymId, UUID userId) {
         Gym gym = access.requireActiveGym(gymId);
         access.requireOrganizationAdmin(actorId, gym.getOrganizationId());
-        return gymAdmins.grant(gymId, accountId) == 1;
+        return gymAdmins.grant(gymId, userId) == 1;
     }
 
-    public boolean grantGymStaff(UUID actorId, UUID gymId, UUID accountId) {
+    public boolean grantGymStaff(UUID actorId, UUID gymId, UUID userId) {
         access.requireGymAdmin(actorId, gymId);
-        return staff.grant(gymId, accountId) == 1;
+        return staff.grant(gymId, userId) == 1;
     }
 
     public Wall createWall(UUID actorId, UUID gymId, String name, Wall.Discipline discipline) {

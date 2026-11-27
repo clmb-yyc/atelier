@@ -14,7 +14,7 @@ public class OrganizationAdmin {
     @Embeddable
     public record Key(
             @Column(name = "organization_id") UUID organizationId,
-            @Column(name = "account_id") UUID accountId
+            @Column(name = "user_id") UUID userId
     ) {}
 
     @EmbeddedId
@@ -22,8 +22,8 @@ public class OrganizationAdmin {
 
     protected OrganizationAdmin() {}
 
-    public OrganizationAdmin(UUID organizationId, UUID accountId) {
-        id = new Key(organizationId, accountId);
+    public OrganizationAdmin(UUID organizationId, UUID userId) {
+        id = new Key(organizationId, userId);
     }
 
     public Key getId() {

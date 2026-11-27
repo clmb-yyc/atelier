@@ -20,7 +20,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import static com.clmb.atelier.config.JwtAccount.accountId;
+import static com.clmb.atelier.config.JwtUser.userId;
 
 @RestController
 @RequestMapping("/api")
@@ -35,27 +35,27 @@ public class PassController {
     @ResponseStatus(HttpStatus.CREATED)
     public PassResponse createPass(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
                                    @RequestBody PassRequest request) {
-        return PassResponse.from(passes.createPass(accountId(jwt), organizationId, request.name(),
+        return PassResponse.from(passes.createPass(userId(jwt), organizationId, request.name(),
                 request.gymId(), request.passType(), request.validUntil(), request.visitLimit()));
     }
 
     @GetMapping("/organizations/{organizationId}/passes")
     public List<PassResponse> listPasses(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId) {
-        return passes.listPasses(accountId(jwt), organizationId).stream().map(PassResponse::from).toList();
+        return passes.listPasses(userId(jwt), organizationId).stream().map(PassResponse::from).toList();
     }
 
     @DeleteMapping("/organizations/{organizationId}/passes/{passId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void archivePass(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
                             @PathVariable UUID passId) {
-        passes.archivePass(accountId(jwt), organizationId, passId);
+        passes.archivePass(userId(jwt), organizationId, passId);
     }
 
     @PostMapping("/organizations/{organizationId}/passes/{passId}/user-passes")
     @ResponseStatus(HttpStatus.CREATED)
     public UserPassResponse issueUserPass(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
                                   @PathVariable UUID passId, @RequestBody IssueUserPassRequest request) {
-        return UserPassResponse.from(passes.issueUserPass(accountId(jwt), organizationId, passId, request.accountId(),
+        return UserPassResponse.from(passes.issueUserPass(userId(jwt), organizationId, passId, request.userId(),
                 request.startsAt(), request.expiresAt()));
     }
 
@@ -63,7 +63,7 @@ public class PassController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserPassResponse issueUserPassAtGym(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,
                                        @PathVariable UUID passId, @RequestBody IssueUserPassRequest request) {
-        return UserPassResponse.from(passes.issueUserPassAtGym(accountId(jwt), gymId, passId, request.accountId(),
+        return UserPassResponse.from(passes.issueUserPassAtGym(userId(jwt), gymId, passId, request.userId(),
                 request.startsAt(), request.expiresAt()));
     }
 
@@ -71,12 +71,12 @@ public class PassController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void revokeUserPass(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
                            @PathVariable UUID userPassId) {
-        passes.revokeUserPass(accountId(jwt), organizationId, userPassId);
+        passes.revokeUserPass(userId(jwt), organizationId, userPassId);
     }
 
     @GetMapping("/me/user-passes")
     public List<UserPassResponse> listOwnUserPasses(@AuthenticationPrincipal Jwt jwt) {
-        return passes.listUserPasses(accountId(jwt)).stream().map(UserPassResponse::from).toList();
+        return passes.listUserPasses(userId(jwt)).stream().map(UserPassResponse::from).toList();
     }
 
     @ExceptionHandler(PassIssuanceConflict.class)
@@ -86,7 +86,7 @@ public class PassController {
 
     public record PassRequest(String name, UUID gymId, Pass.PassType passType, Instant validUntil,
                               Integer visitLimit) {}
-    public record IssueUserPassRequest(UUID accountId, Instant startsAt, Instant expiresAt) {}
+    public record IssueUserPassRequest(UUID userId, Instant startsAt, Instant expiresAt) {}
 
     public record PassResponse(UUID id, UUID organizationId, UUID gymId, String name, Pass.PassType passType,
                                Instant validUntil, Integer visitLimit, Instant archivedAt) {
@@ -96,10 +96,10 @@ public class PassController {
         }
     }
 
-    public record UserPassResponse(UUID id, UUID passId, UUID accountId, Instant startsAt, Instant expiresAt,
+    public record UserPassResponse(UUID id, UUID passId, UUID userId, Instant startsAt, Instant expiresAt,
                                Instant revokedAt) {
         static UserPassResponse from(UserPass userPass) {
-            return new UserPassResponse(userPass.getId(), userPass.getPassId(), userPass.getAccountId(), userPass.getStartsAt(),
+            return new UserPassResponse(userPass.getId(), userPass.getPassId(), userPass.getUserId(), userPass.getStartsAt(),
                     userPass.getExpiresAt(), userPass.getRevokedAt());
         }
     }

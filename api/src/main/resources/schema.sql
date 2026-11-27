@@ -14,20 +14,20 @@ CREATE TABLE IF NOT EXISTS gyms (
 
 CREATE TABLE IF NOT EXISTS organization_admins (
     organization_id UUID NOT NULL REFERENCES organizations(id),
-    account_id UUID NOT NULL,
-    PRIMARY KEY (organization_id, account_id)
+    user_id UUID NOT NULL,
+    PRIMARY KEY (organization_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS gym_staff (
     gym_id UUID NOT NULL REFERENCES gyms(id),
-    account_id UUID NOT NULL,
-    PRIMARY KEY (gym_id, account_id)
+    user_id UUID NOT NULL,
+    PRIMARY KEY (gym_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS gym_admins (
     gym_id UUID NOT NULL REFERENCES gyms(id),
-    account_id UUID NOT NULL,
-    PRIMARY KEY (gym_id, account_id)
+    user_id UUID NOT NULL,
+    PRIMARY KEY (gym_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS walls (
@@ -65,7 +65,7 @@ ALTER TABLE passes ADD COLUMN IF NOT EXISTS pass_type VARCHAR(16)
 CREATE TABLE IF NOT EXISTS user_passes (
     id UUID PRIMARY KEY,
     pass_id UUID NOT NULL REFERENCES passes(id),
-    account_id UUID NOT NULL,
+    user_id UUID NOT NULL,
     starts_at TIMESTAMP WITH TIME ZONE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     revoked_at TIMESTAMP WITH TIME ZONE,
@@ -80,6 +80,6 @@ CREATE TABLE IF NOT EXISTS check_ins (
 );
 
 CREATE INDEX IF NOT EXISTS check_ins_user_pass_id_idx ON check_ins (user_pass_id);
-CREATE INDEX IF NOT EXISTS user_passes_account_id_idx ON user_passes (account_id);
+CREATE INDEX IF NOT EXISTS user_passes_user_id_idx ON user_passes (user_id);
 CREATE INDEX IF NOT EXISTS walls_gym_id_idx ON walls (gym_id);
 CREATE INDEX IF NOT EXISTS routes_wall_id_idx ON routes (wall_id);

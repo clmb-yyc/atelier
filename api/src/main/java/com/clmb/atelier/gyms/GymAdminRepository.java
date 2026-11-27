@@ -13,9 +13,9 @@ public interface GymAdminRepository extends Repository<GymAdmin, GymAdmin.Key> {
 
     @Modifying
     @Query(value = """
-            INSERT INTO gym_admins (gym_id, account_id)
-            VALUES (:gymId, :accountId)
+            INSERT INTO gym_admins (gym_id, user_id)
+            VALUES (:gymId, :userId)
             ON CONFLICT DO NOTHING
             """, nativeQuery = true)
-    int grant(@Param("gymId") UUID gymId, @Param("accountId") UUID accountId);
+    int grant(@Param("gymId") UUID gymId, @Param("userId") UUID userId);
 }

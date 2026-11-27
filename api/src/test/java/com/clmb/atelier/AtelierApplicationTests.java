@@ -196,19 +196,19 @@ class AtelierApplicationTests {
         return token(role, UUID.randomUUID());
     }
 
-    private String token(String role, UUID accountId) {
-        return token(role, AUTH_ISSUER, Instant.now(), Base64.getDecoder().decode(signingSecret), accountId);
+    private String token(String role, UUID userId) {
+        return token(role, AUTH_ISSUER, Instant.now(), Base64.getDecoder().decode(signingSecret), userId);
     }
 
     private String token(String role, String issuer, Instant issuedAt, byte[] key) {
         return token(role, issuer, issuedAt, key, UUID.randomUUID());
     }
 
-    private String token(String role, String issuer, Instant issuedAt, byte[] key, UUID accountId) {
+    private String token(String role, String issuer, Instant issuedAt, byte[] key, UUID userId) {
         // Match the auth service's access-token claims and signing algorithm.
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
-                .subject(accountId.toString())
+                .subject(userId.toString())
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(900))
                 .claim("preferred_username", "climber")

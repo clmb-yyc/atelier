@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-import static com.clmb.atelier.config.JwtAccount.accountId;
+import static com.clmb.atelier.config.JwtUser.userId;
 
 @RestController
 @RequestMapping("/api/organizations")
@@ -29,7 +29,7 @@ public class OrganizationsController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public OrganizationResponse createOrganization(@AuthenticationPrincipal Jwt jwt, @RequestBody NameRequest request) {
-        Organization organization = administration.createOrganization(accountId(jwt), request.name());
+        Organization organization = administration.createOrganization(userId(jwt), request.name());
         return new OrganizationResponse(organization.getId(), organization.getName());
     }
 
@@ -37,7 +37,7 @@ public class OrganizationsController {
     @ResponseStatus(HttpStatus.CREATED)
     public GymResponse createGym(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID organizationId,
                                  @RequestBody NameRequest request) {
-        Gym gym = administration.createGym(accountId(jwt), organizationId, request.name());
+        Gym gym = administration.createGym(userId(jwt), organizationId, request.name());
         return new GymResponse(gym.getId(), gym.getOrganizationId(), gym.getName());
     }
 

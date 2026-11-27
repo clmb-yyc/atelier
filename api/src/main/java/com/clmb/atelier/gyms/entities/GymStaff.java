@@ -14,7 +14,7 @@ public class GymStaff {
     @Embeddable
     public record Key(
             @Column(name = "gym_id") UUID gymId,
-            @Column(name = "account_id") UUID accountId
+            @Column(name = "user_id") UUID userId
     ) {}
 
     @EmbeddedId
@@ -22,8 +22,8 @@ public class GymStaff {
 
     protected GymStaff() {}
 
-    public GymStaff(UUID gymId, UUID accountId) {
-        id = new Key(gymId, accountId);
+    public GymStaff(UUID gymId, UUID userId) {
+        id = new Key(gymId, userId);
     }
 
     public Key getId() {

@@ -86,7 +86,7 @@ class PassFlowTests {
         UUID plan = createdId(postJson(passPath, admin,
                 Map.of("name", "One visit", "gymId", gymId, "passType", "DAY_PASS", "visitLimit", 1)));
         String issuePath = passPath + "/" + plan + "/user-passes";
-        postJson(issuePath, admin, Map.of("accountId", member)).andExpect(status().isBadRequest());
+        postJson(issuePath, admin, Map.of("userId", member)).andExpect(status().isBadRequest());
         UUID pass = issueUserPass(plan);
 
         mvc.perform(get("/api/me/user-passes").with(jwt().jwt(builder -> builder.subject(member.toString()))))
@@ -95,7 +95,7 @@ class PassFlowTests {
                 .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
 
         deleteAsAdmin(passPath + "/" + plan).andExpect(status().isNoContent());
-        postJson(issuePath, admin, Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600)))
+        postJson(issuePath, admin, Map.of("userId", member, "expiresAt", Instant.now().plusSeconds(3600)))
                 .andExpect(status().isConflict());
         checkIn(gymId, pass, member).andExpect(status().isForbidden());
         checkIn(gymId, pass, staff).andExpect(status().isForbidden());
@@ -120,7 +120,7 @@ class PassFlowTests {
         UUID closedPlan = plans.save(new Pass(organizationId, null, "Closed", Pass.PassType.MEMBERSHIP,
                 now.minusSeconds(60), null)).getId();
         postJson(passPath + "/" + closedPlan + "/user-passes", admin,
-                Map.of("accountId", member, "expiresAt", now.plusSeconds(3600))).andExpect(status().isConflict());
+                Map.of("userId", member, "expiresAt", now.plusSeconds(3600))).andExpect(status().isConflict());
 
         UUID expired = passes.save(new UserPass(closedPlan, member, now.minusSeconds(120), now.minusSeconds(60))).getId();
         UUID future = passes.save(new UserPass(closedPlan, member, now.plusSeconds(60), now.plusSeconds(120))).getId();
@@ -155,7 +155,7 @@ class PassFlowTests {
         UUID membership = createPass("Monthly", "MEMBERSHIP");
         UUID dayPass = createPass("Day pass", "DAY_PASS");
         Instant expiresAt = Instant.now().plusSeconds(3600);
-        Map<String, ?> issue = Map.of("accountId", member, "expiresAt", expiresAt);
+        Map<String, ?> issue = Map.of("userId", member, "expiresAt", expiresAt);
         UUID currentPass = createdId(postJson(passPath + "/" + membership + "/user-passes", admin, issue));
 
         for (UUID plan : List.of(membership, dayPass)) {
@@ -164,7 +164,7 @@ class PassFlowTests {
                     .andExpect(jsonPath("$.conflictingUserPassIds[0]").value(currentPass.toString()));
         }
 
-        postJson(passPath + "/" + dayPass + "/user-passes", admin, Map.of("accountId", member,
+        postJson(passPath + "/" + dayPass + "/user-passes", admin, Map.of("userId", member,
                         "startsAt", expiresAt.plusSeconds(1), "expiresAt", expiresAt.plusSeconds(3600)))
                 .andExpect(status().isCreated());
     }
@@ -176,20 +176,20 @@ class PassFlowTests {
         UUID currentPass = issueUserPass(dayPass);
         assignStaff(gymId, admin, staff).andExpect(status().isCreated());
         String issueAtGym = "/api/gyms/" + gymId + "/passes/" + membership + "/user-passes";
-        Map<String, ?> request = Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600));
+        Map<String, ?> request = Map.of("userId", member, "expiresAt", Instant.now().plusSeconds(3600));
 
         postJson(issueAtGym, staff, request)
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EXISTING_PASSES_REVIEW"))
                 .andExpect(jsonPath("$.conflictingUserPassIds[0]").value(currentPass.toString()));
         postJson(issueAtGym, otherStaff, request).andExpect(status().isForbidden());
-        assertThat(passes.findAllByAccountIdOrderByExpiresAtDesc(member)).hasSize(1);
+        assertThat(passes.findAllByUserIdOrderByExpiresAtDesc(member)).hasSize(1);
     }
 
     @Test
     void concurrentMembershipRequestsForDifferentPlansCannotBothSucceed() throws Exception {
         UUID monthly = createPass("Monthly", "MEMBERSHIP");
         UUID yearly = createPass("Yearly", "MEMBERSHIP");
-        Map<String, ?> request = Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600));
+        Map<String, ?> request = Map.of("userId", member, "expiresAt", Instant.now().plusSeconds(3600));
         CyclicBarrier start = new CyclicBarrier(2);
         try (var executor = Executors.newFixedThreadPool(2)) {
             var first = executor.submit(issueWhenReady(start, monthly, request));
@@ -197,7 +197,7 @@ class PassFlowTests {
             assertThat(List.of(first.get(15, TimeUnit.SECONDS), second.get(15, TimeUnit.SECONDS)))
                     .containsExactlyInAnyOrder(201, 409);
         }
-        assertThat(passes.findAllByAccountIdOrderByExpiresAtDesc(member)).hasSize(1);
+        assertThat(passes.findAllByUserIdOrderByExpiresAtDesc(member)).hasSize(1);
     }
 
     private Callable<Integer> issueWhenReady(CyclicBarrier start, UUID plan, Map<String, ?> request) {
@@ -220,7 +220,7 @@ class PassFlowTests {
 
     private UUID issueUserPass(UUID plan) throws Exception {
         return createdId(postJson(passPath + "/" + plan + "/user-passes", admin,
-                Map.of("accountId", member, "expiresAt", Instant.now().plusSeconds(3600))));
+                Map.of("userId", member, "expiresAt", Instant.now().plusSeconds(3600))));
     }
 
     private ResultActions checkIn(UUID targetGym, UUID pass, UUID actor) throws Exception {

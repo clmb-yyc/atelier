@@ -99,7 +99,7 @@ public class PassService {
         Instant start = startsAt == null ? now : startsAt;
         if (memberId == null || expiresAt == null || !expiresAt.isAfter(start) || !expiresAt.isAfter(now)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "accountId is required and expiresAt must be after startsAt and in the future");
+                    "userId is required and expiresAt must be after startsAt and in the future");
         }
         requireCompatiblePasses(pass, memberId, start.isBefore(now) ? now : start, expiresAt);
         return userPasses.save(new UserPass(pass.getId(), memberId, start, expiresAt));
@@ -116,8 +116,8 @@ public class PassService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserPass> listUserPasses(UUID accountId) {
-        return userPasses.findAllByAccountIdOrderByExpiresAtDesc(accountId);
+    public List<UserPass> listUserPasses(UUID userId) {
+        return userPasses.findAllByUserIdOrderByExpiresAtDesc(userId);
     }
 
     private Pass lockPass(UUID organizationId, UUID passId) {

@@ -14,7 +14,7 @@ public class GymAdmin {
     @Embeddable
     public record Key(
             @Column(name = "gym_id") UUID gymId,
-            @Column(name = "account_id") UUID accountId
+            @Column(name = "user_id") UUID userId
     ) {}
 
     @EmbeddedId

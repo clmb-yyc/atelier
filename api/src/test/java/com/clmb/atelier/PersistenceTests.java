@@ -73,7 +73,7 @@ class PersistenceTests {
         assertThat(routes.findById(route.getId()).orElseThrow().getWallId()).isEqualTo(wall.getId());
         assertThat(walls.findById(wall.getId()).orElseThrow().getArchivedAt()).isEqualTo(NOW);
         UserPass stored = passes.findById(pass.getId()).orElseThrow();
-        assertThat(stored.getAccountId()).isEqualTo(memberId);
+        assertThat(stored.getUserId()).isEqualTo(memberId);
         assertThat(stored.getExpiresAt()).isEqualTo(NOW.plusSeconds(3600));
         Pass storedPlan = plans.findById(stored.getPassId()).orElseThrow();
         assertThat(storedPlan.getArchivedAt()).isEqualTo(NOW);

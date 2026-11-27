@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-import static com.clmb.atelier.config.JwtAccount.accountId;
+import static com.clmb.atelier.config.JwtUser.userId;
 
 @RestController
 @RequestMapping("/api")
@@ -22,22 +22,22 @@ public class AdministrationController {
         this.administration = administration;
     }
 
-    @PutMapping("/organizations/{organizationId}/admins/{accountId}")
+    @PutMapping("/organizations/{organizationId}/admins/{userId}")
     public ResponseEntity<Void> grantOrganizationAdmin(@AuthenticationPrincipal Jwt jwt,
-                                                       @PathVariable UUID organizationId, @PathVariable UUID accountId) {
-        return grantResponse(administration.grantOrganizationAdmin(accountId(jwt), organizationId, accountId));
+                                                       @PathVariable UUID organizationId, @PathVariable UUID userId) {
+        return grantResponse(administration.grantOrganizationAdmin(userId(jwt), organizationId, userId));
     }
 
-    @PutMapping("/gyms/{gymId}/admins/{accountId}")
+    @PutMapping("/gyms/{gymId}/admins/{userId}")
     public ResponseEntity<Void> grantGymAdmin(@AuthenticationPrincipal Jwt jwt,
-                                              @PathVariable UUID gymId, @PathVariable UUID accountId) {
-        return grantResponse(administration.grantGymAdmin(accountId(jwt), gymId, accountId));
+                                              @PathVariable UUID gymId, @PathVariable UUID userId) {
+        return grantResponse(administration.grantGymAdmin(userId(jwt), gymId, userId));
     }
 
-    @PutMapping("/gyms/{gymId}/staff/{accountId}")
+    @PutMapping("/gyms/{gymId}/staff/{userId}")
     public ResponseEntity<Void> grantGymStaff(@AuthenticationPrincipal Jwt jwt,
-                                              @PathVariable UUID gymId, @PathVariable UUID accountId) {
-        return grantResponse(administration.grantGymStaff(accountId(jwt), gymId, accountId));
+                                              @PathVariable UUID gymId, @PathVariable UUID userId) {
+        return grantResponse(administration.grantGymStaff(userId(jwt), gymId, userId));
     }
 
     private static ResponseEntity<Void> grantResponse(boolean created) {
