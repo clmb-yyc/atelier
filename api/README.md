@@ -37,7 +37,7 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 
 | Method and path | Who can call it | Request body | Success response |
 | --- | --- | --- | --- |
-| `POST /api/organizations` | Auth `STAFF` | `name` | `201 Created` with `id` and `name`. The caller becomes the first organization admin. |
+| `POST /api/organizations` | Signed-in user | `name` | `201 Created` with `id` and `name`. The caller becomes the first organization admin. |
 | `POST /api/organizations/{organizationId}/gyms` | Organization admin | Required `name`, `address`, `city`, `postalCode`, `country`, `latitude`, `longitude`, and `timezone` | `201 Created` with `id`, `organizationId`, and `name`. Missing required fields return `400 Bad Request`. |
 | `PUT /api/organizations/{organizationId}/admins/{userId}` | Organization admin | None | `201 Created` for a new assignment, with `assigned_at` recorded by the server, or `204 No Content` if it already exists. Both have an empty body. |
 | `PUT /api/gyms/{gymId}/staff/{userId}` | Admin of the gym's organization | None | `201 Created` for a new assignment, with `assigned_at` recorded by the server, or `204 No Content` if it already exists. Both have an empty body. |

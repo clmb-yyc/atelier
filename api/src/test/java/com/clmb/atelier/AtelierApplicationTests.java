@@ -89,8 +89,8 @@ class AtelierApplicationTests {
         routes.save(new Route(siblingWall.getId(), "North only", gradeId("V4"), now.minusSeconds(60),
                 "Blue", owner, "Blue"));
 
-        String staffToken = token("ROLE_VIEWER", employee);
-        String ownerToken = token("ROLE_STAFF", owner);
+        String staffToken = token(employee);
+        String ownerToken = token(owner);
         mvc.perform(get("/api/gyms/{gymId}/routes", gym).header("Authorization", "Bearer " + staffToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
@@ -101,7 +101,7 @@ class AtelierApplicationTests {
                 .andExpect(jsonPath("$[0].gradeId").value(newer.getGradeId().toString()))
                 .andExpect(jsonPath("$[0].grade").value("V4"))
                 .andExpect(jsonPath("$[1].id").value(older.getId().toString()));
-        mvc.perform(get("/api/gyms/{gymId}/routes", gym).header("Authorization", "Bearer " + token("ROLE_STAFF")))
+        mvc.perform(get("/api/gyms/{gymId}/routes", gym).header("Authorization", "Bearer " + token()))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/gyms/{gymId}/routes", sibling).header("Authorization", "Bearer " + staffToken))
                 .andExpect(status().isForbidden());
@@ -116,10 +116,10 @@ class AtelierApplicationTests {
     void rejectsMissingExpiredWrongIssuerAndWrongSignatureTokens() throws Exception {
         byte[] key = Base64.getDecoder().decode(signingSecret);
         Instant now = Instant.now();
-        String wrongIssuer = token("ROLE_STAFF", "clmb-atelier", now, key);
-        String expired = token("ROLE_STAFF", AUTH_ISSUER, now.minusSeconds(1200), key);
+        String wrongIssuer = token("clmb-atelier", now, key);
+        String expired = token(AUTH_ISSUER, now.minusSeconds(1200), key);
         key[0] ^= 1;
-        String wrongSignature = token("ROLE_STAFF", AUTH_ISSUER, now, key);
+        String wrongSignature = token(AUTH_ISSUER, now, key);
 
         String path = "/api/gyms/" + UUID.randomUUID() + "/routes";
         mvc.perform(get(path)).andExpect(status().isUnauthorized());
@@ -131,7 +131,7 @@ class AtelierApplicationTests {
 
     @Test
     void accountEndpointsAreAbsentEvenWithAValidToken() throws Exception {
-        String bearer = "Bearer " + token("ROLE_STAFF");
+        String bearer = "Bearer " + token();
         for (String endpoint : List.of("/api/auth/signup", "/api/auth/login", "/api/auth/refresh")) {
             mvc.perform(post(endpoint).header("Authorization", bearer)).andExpect(status().isNotFound());
         }
@@ -140,19 +140,23 @@ class AtelierApplicationTests {
 
     @Test
     void organizationAdminsCanOnboardGymsAndGrantScopedAccess() throws Exception {
+        UUID creatorId = UUID.randomUUID();
         UUID organizationAdminId = UUID.randomUUID();
         UUID employeeId = UUID.randomUUID();
-        String creator = token("ROLE_STAFF");
-        String organizationAdmin = token("ROLE_VIEWER", organizationAdminId);
-        String employee = token("ROLE_VIEWER", employeeId);
-        String otherStaff = token("ROLE_STAFF");
+        String creator = token(creatorId);
+        String organizationAdmin = token(organizationAdminId);
+        String employee = token(employeeId);
+        String otherAdmin = token();
 
-        postJson("/api/organizations", employee, "{\"name\":\"Outside Co\"}")
-                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/organizations").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Anonymous Co\"}"))
+                .andExpect(status().isUnauthorized());
         String organizationId = createdId(postJson("/api/organizations", creator, "{\"name\":\"Climbing Co\"}"));
-        String otherOrganizationId = createdId(postJson("/api/organizations", otherStaff, "{\"name\":\"Other Co\"}"));
+        assertThat(organizationAdmins.existsById(new OrganizationAdmin.Key(UUID.fromString(organizationId), creatorId)))
+                .isTrue();
+        String otherOrganizationId = createdId(postJson("/api/organizations", otherAdmin, "{\"name\":\"Other Co\"}"));
         String gymsPath = "/api/organizations/" + organizationId + "/gyms";
-        postJson(gymsPath, otherStaff, gymRequest("Unauthorized")).andExpect(status().isForbidden());
+        postJson(gymsPath, otherAdmin, gymRequest("Unauthorized")).andExpect(status().isForbidden());
         postJson(gymsPath, creator, "{\"name\":\"Missing address and coordinates\"}")
                 .andExpect(status().isBadRequest());
         postJson(gymsPath, creator, gymRequest("Missing address").replace("\"100 Main St\"", "null"))
@@ -168,11 +172,11 @@ class AtelierApplicationTests {
         String gymId = createdId(postJson(gymsPath, organizationAdmin, gymRequest("Downtown")));
         String siblingGymId = createdId(postJson(gymsPath, creator, gymRequest("North")));
         String otherGymId = createdId(postJson("/api/organizations/" + otherOrganizationId + "/gyms",
-                otherStaff, gymRequest("West")));
+                otherAdmin, gymRequest("West")));
 
         grant("/api/gyms/" + gymId + "/admins/" + employeeId, organizationAdmin).andExpect(status().isNotFound());
         String gymStaffPath = "/api/gyms/" + gymId + "/staff/" + employeeId;
-        grant(gymStaffPath, otherStaff).andExpect(status().isForbidden());
+        grant(gymStaffPath, otherAdmin).andExpect(status().isForbidden());
         grant(gymStaffPath, organizationAdmin).andExpect(status().isCreated());
         grant(gymStaffPath, organizationAdmin).andExpect(status().isNoContent());
         grant("/api/organizations/" + organizationId + "/admins/" + employeeId, employee)
@@ -220,17 +224,17 @@ class AtelierApplicationTests {
         String sharedRoute = routeRequest.replace(publicGradeId, sharedGradeId);
         postJson("/api/gyms/" + siblingGymId + "/walls/" + siblingWallId + "/routes", organizationAdmin, sharedRoute)
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.grade").value("Shared Red"));
-        String otherWallId = createdId(postJson("/api/gyms/" + otherGymId + "/walls", otherStaff, wall));
-        postJson("/api/gyms/" + otherGymId + "/walls/" + otherWallId + "/routes", otherStaff, sharedRoute)
+        String otherWallId = createdId(postJson("/api/gyms/" + otherGymId + "/walls", otherAdmin, wall));
+        postJson("/api/gyms/" + otherGymId + "/walls/" + otherWallId + "/routes", otherAdmin, sharedRoute)
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void scopesGradingSystemsToThePublicOrganizationOrGym() throws Exception {
-        String admin = token("ROLE_STAFF");
-        String otherAdmin = token("ROLE_STAFF");
+        String admin = token();
+        String otherAdmin = token();
         UUID staffId = UUID.randomUUID();
-        String staff = token("ROLE_VIEWER", staffId);
+        String staff = token(staffId);
         String org = createdId(postJson("/api/organizations", admin, "{\"name\":\"Grading Co\"}"));
         String otherOrg = createdId(postJson("/api/organizations", otherAdmin, "{\"name\":\"Other Grading Co\"}"));
         String gymsPath = "/api/organizations/" + org + "/gyms";
@@ -345,19 +349,19 @@ class AtelierApplicationTests {
         return json.readTree(response).get("id").asString();
     }
 
-    private String token(String role) {
-        return token(role, UUID.randomUUID());
+    private String token() {
+        return token(UUID.randomUUID());
     }
 
-    private String token(String role, UUID userId) {
-        return token(role, AUTH_ISSUER, Instant.now(), Base64.getDecoder().decode(signingSecret), userId);
+    private String token(UUID userId) {
+        return token(AUTH_ISSUER, Instant.now(), Base64.getDecoder().decode(signingSecret), userId);
     }
 
-    private String token(String role, String issuer, Instant issuedAt, byte[] key) {
-        return token(role, issuer, issuedAt, key, UUID.randomUUID());
+    private String token(String issuer, Instant issuedAt, byte[] key) {
+        return token(issuer, issuedAt, key, UUID.randomUUID());
     }
 
-    private String token(String role, String issuer, Instant issuedAt, byte[] key, UUID userId) {
+    private String token(String issuer, Instant issuedAt, byte[] key, UUID userId) {
         // Match the auth service's access-token claims and signing algorithm.
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
@@ -365,7 +369,6 @@ class AtelierApplicationTests {
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(900))
                 .claim("preferred_username", "climber")
-                .claim("authorities", List.of(role))
                 .build();
         var encoder = NimbusJwtEncoder.withSecretKey(new SecretKeySpec(key, "HmacSHA256"))
                 .algorithm(MacAlgorithm.HS256).build();
