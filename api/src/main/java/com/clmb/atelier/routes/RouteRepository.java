@@ -12,9 +12,9 @@ import java.util.UUID;
 public interface RouteRepository extends JpaRepository<Route, UUID> {
     @Query("""
             select new com.clmb.atelier.routes.dtos.RouteListItem(
-                route.id, wall.id, wall.name, wall.discipline, route.name, route.grade, route.setAt)
-            from Route route, Wall wall
-            where route.wallId = wall.id and wall.gymId = :gymId
+                route.id, wall.id, wall.name, wall.discipline, route.name, route.gradeId, grade.label, route.setAt)
+            from Route route, Wall wall, Grade grade
+            where route.wallId = wall.id and wall.gymId = :gymId and route.gradeId = grade.id
                 and route.removedAt is null and wall.archivedAt is null
             order by route.setAt desc, route.id
             """)

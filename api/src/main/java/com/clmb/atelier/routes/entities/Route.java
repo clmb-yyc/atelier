@@ -22,8 +22,8 @@ public class Route {
 
     private String name;
 
-    @Column(nullable = false)
-    private String grade;
+    @Column(name = "grade_id", nullable = false)
+    private UUID gradeId;
 
     @Column(name = "set_at", nullable = false)
     private Instant setAt;
@@ -59,11 +59,11 @@ public class Route {
 
     protected Route() {}
 
-    public Route(UUID wallId, String name, String grade, Instant setAt, String colour, UUID setterId,
+    public Route(UUID wallId, String name, UUID gradeId, Instant setAt, String colour, UUID setterId,
                  String holdColour, int difficultyRating) {
         this.wallId = wallId;
         this.name = name;
-        this.grade = grade;
+        this.gradeId = gradeId;
         this.setAt = setAt;
         this.colour = colour;
         this.setterId = setterId;
@@ -88,8 +88,8 @@ public class Route {
         return name;
     }
 
-    public String getGrade() {
-        return grade;
+    public UUID getGradeId() {
+        return gradeId;
     }
 
     public Instant getSetAt() {

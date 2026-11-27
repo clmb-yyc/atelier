@@ -11,7 +11,7 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 | `organization_admins` | `organization_id` and `user_id` (composite PK), `assigned_at`, `created_at` | `assigned_by` |
 | `gym_staff` | `gym_id` and `user_id` (composite PK), `assigned_at`, `created_at` | `assigned_by`, `job_title`, `employment_type` |
 | `walls` | `id` (PK), `gym_id`, `name`, `discipline` (`BOULDER` or `ROPE`), `created_at` | `archived_at`, `description`, `height_m`, `angle_degrees`, `location` |
-| `routes` | `id` (PK), `wall_id`, `grade` (text), `colour`, `setter_id`, `hold_colour`, `difficulty_rating` (integer), `set_at`, `created_at` | `name`, `removed_at`, `description`, `style`, `image_url`, `removal_reason` |
+| `routes` | `id` (PK), `wall_id`, `grade_id`, `colour`, `setter_id`, `hold_colour`, `difficulty_rating` (integer), `set_at`, `created_at` | `name`, `removed_at`, `description`, `style`, `image_url`, `removal_reason` |
 | `grading_systems` | `id` (PK), `name`, `visibility` (`PUBLIC` or `PRIVATE`), `created_at` | `gym_id`, `description` |
 | `grades` | `id` (PK), `grading_system_id`, `label`, `sort_order`, `created_at` | `description` |
 | `passes` | `id` (PK), `organization_id`, `name`, `price`, `currency`, `is_renewable`, `created_at` | `gym_id`, `pass_type` (older passes), `valid_until`, `visit_limit` (integer), `archived_at`, `description`, `duration_days` |
@@ -21,7 +21,7 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 Atelier sets `created_at` automatically for new records.
 
 - An organization can operate multiple gyms. Organization admins manage all gyms in their organization. Staff assignments are scoped to a gym.
-- A route inherits its discipline from its wall and stores its own grade. Archiving a wall preserves its routes.
+- A route inherits its discipline from its wall and references a grade from a public system or a private system at that wall's gym. Archiving a wall preserves its routes.
 - Public grading systems are available at every gym and have a null `gym_id`. Private systems have a `gym_id` and are available only at that gym. Grades inherit their system's visibility and have a unique label within that system.
 - A pass with no `gym_id` covers every gym in its organization. Each user pass has its own required expiry.
 - Archiving a pass closes it to new issuance. Existing user passes still reference it for scope and any visit limit.
@@ -41,8 +41,8 @@ Send an access token from Auth as `Authorization: Bearer <token>` on every reque
 | `PUT /api/organizations/{organizationId}/admins/{userId}` | Organization admin | None | `201 Created` for a new assignment, with `assigned_at` recorded by the server, or `204 No Content` if it already exists. Both have an empty body. |
 | `PUT /api/gyms/{gymId}/staff/{userId}` | Admin of the gym's organization | None | `201 Created` for a new assignment, with `assigned_at` recorded by the server, or `204 No Content` if it already exists. Both have an empty body. |
 | `POST /api/gyms/{gymId}/walls` | Admin of the gym's organization | `name`, `discipline` (`BOULDER` or `ROPE`) | `201 Created` with `id`, `gymId`, `name`, and `discipline`. The server records `created_at`. |
-| `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Admin of the gym's organization | `grade`, `colour`, `setterId` (user UUID), `holdColour`, `difficultyRating` (integer), optional `name` | `201 Created` with `id`, `wallId`, `name`, `grade`, and `setAt`. |
-| `GET /api/gyms/{gymId}/routes` | Staff assigned to the gym or an admin of its organization | None | `200 OK` with an array of active routes, newest first. Each item includes `id`, `wallId`, `wallName`, `discipline`, `name`, `grade`, and `setAt`. |
+| `POST /api/gyms/{gymId}/walls/{wallId}/routes` | Admin of the gym's organization | `gradeId` (grade UUID), `colour`, `setterId` (user UUID), `holdColour`, `difficultyRating` (integer), optional `name` | `201 Created` with `id`, `wallId`, `name`, `gradeId`, `grade` (label), and `setAt`. A grade unavailable at the gym returns `404 Not Found`. |
+| `GET /api/gyms/{gymId}/routes` | Staff assigned to the gym or an admin of its organization | None | `200 OK` with an array of active routes, newest first. Each item includes `id`, `wallId`, `wallName`, `discipline`, `name`, `gradeId`, `grade` (label), and `setAt`. |
 
 ### Grading settings
 

@@ -1,5 +1,7 @@
 package com.clmb.atelier.administration;
 
+import com.clmb.atelier.grading.GradeRepository;
+import com.clmb.atelier.grading.entities.GradingSystem;
 import com.clmb.atelier.gyms.GymRepository;
 import com.clmb.atelier.gyms.GymStaffRepository;
 import com.clmb.atelier.gyms.entities.Gym;
@@ -9,6 +11,7 @@ import com.clmb.atelier.organizations.dtos.GymRequest;
 import com.clmb.atelier.organizations.entities.Organization;
 import com.clmb.atelier.routes.RouteRepository;
 import com.clmb.atelier.routes.dtos.RouteRequest;
+import com.clmb.atelier.routes.dtos.RouteResponse;
 import com.clmb.atelier.routes.entities.Route;
 import com.clmb.atelier.walls.WallRepository;
 import com.clmb.atelier.walls.entities.Wall;
@@ -29,12 +32,13 @@ public class AdministrationService {
     private final GymStaffRepository staff;
     private final WallRepository walls;
     private final RouteRepository routes;
+    private final GradeRepository grades;
     private final AdministrationAccess access;
 
     public AdministrationService(
             OrganizationRepository organizations, OrganizationAdminRepository organizationAdmins,
             GymRepository gyms, GymStaffRepository staff,
-            WallRepository walls, RouteRepository routes,
+            WallRepository walls, RouteRepository routes, GradeRepository grades,
             AdministrationAccess access) {
         this.organizations = organizations;
         this.organizationAdmins = organizationAdmins;
@@ -42,6 +46,7 @@ public class AdministrationService {
         this.staff = staff;
         this.walls = walls;
         this.routes = routes;
+        this.grades = grades;
         this.access = access;
     }
 
@@ -86,18 +91,22 @@ public class AdministrationService {
         return walls.save(new Wall(gymId, requiredText(name, "name"), discipline));
     }
 
-    public Route createRoute(UUID actorId, UUID gymId, UUID wallId, RouteRequest request) {
+    public RouteResponse createRoute(UUID actorId, UUID gymId, UUID wallId, RouteRequest request) {
         access.requireOrganizationAdminForGym(actorId, gymId);
         walls.findByIdAndGymIdAndArchivedAtIsNull(wallId, gymId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wall not found in this gym"));
-        if (request.setterId() == null || request.difficultyRating() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "setterId and difficultyRating are required");
+        if (request.gradeId() == null || request.setterId() == null || request.difficultyRating() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "gradeId, setterId and difficultyRating are required");
         }
+        var grade = grades.findAvailableAtGym(request.gradeId(), gymId, GradingSystem.Visibility.PUBLIC)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grade not found at this gym"));
         String name = request.name();
         String routeName = name == null || name.isBlank() ? null : name.strip();
-        return routes.save(new Route(wallId, routeName, requiredText(request.grade(), "grade"), Instant.now(),
+        Route route = routes.save(new Route(wallId, routeName, grade.getId(), Instant.now(),
                 requiredText(request.colour(), "colour"), request.setterId(),
                 requiredText(request.holdColour(), "holdColour"), request.difficultyRating()));
+        return new RouteResponse(route.getId(), route.getWallId(), route.getName(), route.getGradeId(),
+                grade.getLabel(), route.getSetAt());
     }
 
     private static String requiredText(String value, String field) {

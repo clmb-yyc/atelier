@@ -1,5 +1,7 @@
 package com.clmb.atelier;
 
+import com.clmb.atelier.grading.GradeRepository;
+import com.clmb.atelier.grading.entities.Grade;
 import com.clmb.atelier.gyms.GymRepository;
 import com.clmb.atelier.gyms.GymStaffRepository;
 import com.clmb.atelier.gyms.entities.GymStaff;
@@ -54,6 +56,7 @@ class AtelierApplicationTests {
     @Autowired GymStaffRepository gymStaff;
     @Autowired WallRepository walls;
     @Autowired RouteRepository routes;
+    @Autowired GradeRepository grades;
     @Value("${atelier.jwt.secret}") String signingSecret;
 
     @Test
@@ -72,17 +75,17 @@ class AtelierApplicationTests {
         archived.archive(now);
         archived = walls.save(archived);
         Wall siblingWall = walls.save(new Wall(sibling, "Rope wall", Wall.Discipline.ROPE));
-        Route older = routes.save(new Route(active.getId(), null, "V2", now.minusSeconds(360),
+        Route older = routes.save(new Route(active.getId(), null, gradeId("V2"), now.minusSeconds(360),
                 "Blue", owner, "Blue", 2));
-        Route newer = routes.save(new Route(active.getId(), "Slab start", "V4", now.minusSeconds(60),
+        Route newer = routes.save(new Route(active.getId(), "Slab start", gradeId("V4"), now.minusSeconds(60),
                 "Blue", owner, "Blue", 4));
-        Route removed = new Route(active.getId(), "Removed", "V1", now.minusSeconds(300),
+        Route removed = new Route(active.getId(), "Removed", gradeId("V1"), now.minusSeconds(300),
                 "Blue", owner, "Blue", 1);
         removed.remove(now);
         routes.save(removed);
-        routes.save(new Route(archived.getId(), "Archived wall", "V3", now.minusSeconds(600),
+        routes.save(new Route(archived.getId(), "Archived wall", gradeId("V3"), now.minusSeconds(600),
                 "Blue", owner, "Blue", 3));
-        routes.save(new Route(siblingWall.getId(), "North only", "5.10a", now.minusSeconds(60),
+        routes.save(new Route(siblingWall.getId(), "North only", gradeId("V4"), now.minusSeconds(60),
                 "Blue", owner, "Blue", 4));
 
         String staffToken = token("ROLE_VIEWER", employee);
@@ -94,6 +97,7 @@ class AtelierApplicationTests {
                 .andExpect(jsonPath("$[0].wallId").value(active.getId().toString()))
                 .andExpect(jsonPath("$[0].wallName").value("Slab"))
                 .andExpect(jsonPath("$[0].discipline").value("BOULDER"))
+                .andExpect(jsonPath("$[0].gradeId").value(newer.getGradeId().toString()))
                 .andExpect(jsonPath("$[0].grade").value("V4"))
                 .andExpect(jsonPath("$[1].id").value(older.getId().toString()));
         mvc.perform(get("/api/gyms/{gymId}/routes", gym).header("Authorization", "Bearer " + token("ROLE_STAFF")))
@@ -180,21 +184,34 @@ class AtelierApplicationTests {
         postJson(gymWallsPath, employee, wall).andExpect(status().isForbidden());
         postJson("/api/gyms/" + otherGymId + "/walls", organizationAdmin, wall).andExpect(status().isForbidden());
 
+        String publicGradeId = gradeId("V4").toString();
         String routeRequest = """
-                {"grade":"V4","colour":"Blue","setterId":"%s","holdColour":"Blue","difficultyRating":4}
-                """.formatted(organizationAdminId);
+                {"gradeId":"%s","colour":"Blue","setterId":"%s","holdColour":"Blue","difficultyRating":4}
+                """.formatted(publicGradeId, organizationAdminId);
         String routePath = gymWallsPath + "/" + wallId + "/routes";
-        postJson(routePath, organizationAdmin, "{\"grade\":\"V4\"}").andExpect(status().isBadRequest());
+        postJson(routePath, organizationAdmin, routeRequest.replace('"' + publicGradeId + '"', "null"))
+                .andExpect(status().isBadRequest());
         String routeId = createdId(postJson(routePath, organizationAdmin, routeRequest)
                 .andExpect(jsonPath("$.wallId").value(wallId))
+                .andExpect(jsonPath("$.gradeId").value(publicGradeId))
                 .andExpect(jsonPath("$.grade").value("V4")));
         Route route = routes.findById(UUID.fromString(routeId)).orElseThrow();
+        assertThat(route.getGradeId()).isEqualTo(UUID.fromString(publicGradeId));
         assertThat(route.getSetterId()).isEqualTo(organizationAdminId);
         assertThat(route.getDifficultyRating()).isEqualTo(4);
         postJson(gymWallsPath + "/" + siblingWallId + "/routes", organizationAdmin, routeRequest)
                 .andExpect(status().isNotFound());
-        postJson(routePath, organizationAdmin, routeRequest.replace("V4", " "))
-                .andExpect(status().isBadRequest());
+        postJson(routePath, organizationAdmin, routeRequest.replace(publicGradeId, UUID.randomUUID().toString()))
+                .andExpect(status().isNotFound());
+
+        String systemId = createdId(postJson(gradingPath(gymId), employee, "{\"name\":\"Gym Circuit\"}"));
+        String privateGradeId = createdId(postJson(gradingPath(gymId) + "/" + systemId + "/grades", employee,
+                "{\"label\":\"Red Circuit\",\"sortOrder\":1}"));
+        String privateRoute = routeRequest.replace(publicGradeId, privateGradeId);
+        postJson(routePath, organizationAdmin, privateRoute).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.grade").value("Red Circuit"));
+        postJson("/api/gyms/" + siblingGymId + "/walls/" + siblingWallId + "/routes", organizationAdmin, privateRoute)
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -248,6 +265,11 @@ class AtelierApplicationTests {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
         mvc.perform(get(gradingPath(otherGym)).header("Authorization", "Bearer " + staff))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+    }
+
+    private UUID gradeId(String label) {
+        return grades.findAll().stream().filter(grade -> grade.getLabel().equals(label))
+                .map(Grade::getId).findFirst().orElseThrow();
     }
 
     private static String gradingPath(String gymId) {

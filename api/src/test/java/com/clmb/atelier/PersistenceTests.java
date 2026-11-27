@@ -1,5 +1,6 @@
 package com.clmb.atelier;
 
+import com.clmb.atelier.grading.GradeRepository;
 import com.clmb.atelier.passes.PassRepository;
 import com.clmb.atelier.passes.UserPassRepository;
 import com.clmb.atelier.passes.entities.Pass;
@@ -45,6 +46,7 @@ class PersistenceTests {
     @Autowired GymStaffRepository staff;
     @Autowired WallRepository walls;
     @Autowired RouteRepository routes;
+    @Autowired GradeRepository grades;
     @Autowired PassRepository plans;
     @Autowired UserPassRepository passes;
     @Autowired CheckInRepository checkIns;
@@ -58,7 +60,9 @@ class PersistenceTests {
         var admin = admins.save(new OrganizationAdmin(organization.getId(), UUID.randomUUID()));
         var employee = staff.save(new GymStaff(gym.getId(), UUID.randomUUID()));
         Wall wall = walls.save(new Wall(gym.getId(), "Slab", Wall.Discipline.BOULDER));
-        Route route = routes.save(new Route(wall.getId(), null, "V4", NOW, "Blue", employee.getId().userId(),
+        UUID gradeId = grades.findAll().stream().filter(grade -> grade.getLabel().equals("V4")).findFirst()
+                .orElseThrow().getId();
+        Route route = routes.save(new Route(wall.getId(), null, gradeId, NOW, "Blue", employee.getId().userId(),
                 "Blue", 4));
         Pass plan = plans.save(new Pass(organization.getId(), gym.getId(), "10 visits",
                 Pass.PassType.VISIT_PASS, null, 10, BigDecimal.TEN, "CAD", false));

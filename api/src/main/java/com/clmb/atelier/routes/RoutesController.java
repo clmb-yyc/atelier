@@ -6,7 +6,6 @@ import com.clmb.atelier.routes.dtos.RouteRequest;
 import com.clmb.atelier.routes.dtos.RouteResponse;
 import com.clmb.atelier.routes.dtos.WallRequest;
 import com.clmb.atelier.routes.dtos.WallResponse;
-import com.clmb.atelier.routes.entities.Route;
 import com.clmb.atelier.walls.entities.Wall;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -52,7 +51,6 @@ public class RoutesController {
     @ResponseStatus(HttpStatus.CREATED)
     public RouteResponse createRoute(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID gymId,
                                      @PathVariable UUID wallId, @RequestBody RouteRequest request) {
-        Route route = administration.createRoute(userId(jwt), gymId, wallId, request);
-        return new RouteResponse(route.getId(), route.getWallId(), route.getName(), route.getGrade(), route.getSetAt());
+        return administration.createRoute(userId(jwt), gymId, wallId, request);
     }
 }
