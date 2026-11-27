@@ -1,4 +1,4 @@
-package com.clmb.atelier.routes;
+package com.clmb.atelier.routes.dtos;
 
 import com.clmb.atelier.walls.entities.Wall;
 

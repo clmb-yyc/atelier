@@ -1,6 +1,7 @@
 package com.clmb.atelier.routes;
 
 import com.clmb.atelier.administration.AdministrationAccess;
+import com.clmb.atelier.routes.dtos.RouteListItem;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

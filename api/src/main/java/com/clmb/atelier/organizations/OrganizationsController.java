@@ -2,6 +2,9 @@ package com.clmb.atelier.organizations;
 
 import com.clmb.atelier.administration.AdministrationService;
 import com.clmb.atelier.gyms.entities.Gym;
+import com.clmb.atelier.organizations.dtos.GymResponse;
+import com.clmb.atelier.organizations.dtos.NameRequest;
+import com.clmb.atelier.organizations.dtos.OrganizationResponse;
 import com.clmb.atelier.organizations.entities.Organization;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,8 +43,4 @@ public class OrganizationsController {
         Gym gym = administration.createGym(userId(jwt), organizationId, request.name());
         return new GymResponse(gym.getId(), gym.getOrganizationId(), gym.getName());
     }
-
-    public record NameRequest(String name) {}
-    public record OrganizationResponse(UUID id, String name) {}
-    public record GymResponse(UUID id, UUID organizationId, String name) {}
 }

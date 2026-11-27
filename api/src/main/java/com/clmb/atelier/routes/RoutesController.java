@@ -1,6 +1,11 @@
 package com.clmb.atelier.routes;
 
 import com.clmb.atelier.administration.AdministrationService;
+import com.clmb.atelier.routes.dtos.RouteListItem;
+import com.clmb.atelier.routes.dtos.RouteRequest;
+import com.clmb.atelier.routes.dtos.RouteResponse;
+import com.clmb.atelier.routes.dtos.WallRequest;
+import com.clmb.atelier.routes.dtos.WallResponse;
 import com.clmb.atelier.routes.entities.Route;
 import com.clmb.atelier.walls.entities.Wall;
 import org.springframework.http.HttpStatus;
@@ -14,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,9 +55,4 @@ public class RoutesController {
         Route route = administration.createRoute(userId(jwt), gymId, wallId, request.name(), request.grade());
         return new RouteResponse(route.getId(), route.getWallId(), route.getName(), route.getGrade(), route.getSetAt());
     }
-
-    public record WallRequest(String name, Wall.Discipline discipline) {}
-    public record RouteRequest(String name, String grade) {}
-    public record WallResponse(UUID id, UUID gymId, String name, Wall.Discipline discipline) {}
-    public record RouteResponse(UUID id, UUID wallId, String name, String grade, Instant setAt) {}
 }

@@ -1,5 +1,7 @@
 package com.clmb.atelier.checkins;
 
+import com.clmb.atelier.checkins.dtos.CheckInRequest;
+import com.clmb.atelier.checkins.dtos.CheckInResponse;
 import com.clmb.atelier.checkins.entities.CheckIn;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -10,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Instant;
 import java.util.UUID;
 
 import static com.clmb.atelier.config.JwtUser.userId;
@@ -31,7 +32,4 @@ public class CheckInController {
         return new CheckInResponse(checkIn.getId(), checkIn.getGymId(), checkIn.getUserPassId(),
                 checkIn.getCheckedInAt());
     }
-
-    public record CheckInRequest(UUID userPassId) {}
-    public record CheckInResponse(UUID id, UUID gymId, UUID userPassId, Instant checkedInAt) {}
 }
