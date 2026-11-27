@@ -33,11 +33,19 @@ public class GymStaff {
     @Column(name = "employment_type")
     private String employmentType;
 
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
     protected GymStaff() {}
 
     public GymStaff(UUID gymId, UUID userId) {
         id = new Key(gymId, userId);
         assignedAt = Instant.now();
+        createdAt = assignedAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
     public Key getId() {

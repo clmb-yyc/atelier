@@ -35,6 +35,9 @@ public class CheckIn {
     @Column(name = "voided_at")
     private Instant voidedAt;
 
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
     protected CheckIn() {}
 
     public CheckIn(UUID gymId, UUID userPassId, Instant checkedInAt, UUID checkedInBy) {
@@ -42,6 +45,11 @@ public class CheckIn {
         this.userPassId = userPassId;
         this.checkedInAt = checkedInAt;
         this.checkedInBy = checkedInBy;
+        this.createdAt = Instant.now();
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
     public UUID getId() {

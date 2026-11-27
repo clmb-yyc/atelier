@@ -27,11 +27,19 @@ public class OrganizationAdmin {
     @Column(name = "assigned_by")
     private UUID assignedBy;
 
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
     protected OrganizationAdmin() {}
 
     public OrganizationAdmin(UUID organizationId, UUID userId) {
         id = new Key(organizationId, userId);
         assignedAt = Instant.now();
+        createdAt = assignedAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
     public Key getId() {

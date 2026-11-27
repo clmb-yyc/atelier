@@ -11,8 +11,8 @@ import java.util.UUID;
 public interface GymStaffRepository extends JpaRepository<GymStaff, GymStaff.Key> {
     @Modifying
     @Query(value = """
-            INSERT INTO gym_staff (gym_id, user_id, assigned_at)
-            VALUES (:gymId, :userId, CURRENT_TIMESTAMP)
+            INSERT INTO gym_staff (gym_id, user_id, assigned_at, created_at)
+            VALUES (:gymId, :userId, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT DO NOTHING
             """, nativeQuery = true)
     int grant(@Param("gymId") UUID gymId, @Param("userId") UUID userId);

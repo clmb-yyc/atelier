@@ -57,7 +57,7 @@ public class Gym {
 
     private Integer capacity;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     protected Gym() {}
@@ -73,6 +73,7 @@ public class Gym {
         this.latitude = latitude;
         this.longitude = longitude;
         this.timezone = timezone;
+        this.createdAt = Instant.now();
     }
 
     public UUID getId() {

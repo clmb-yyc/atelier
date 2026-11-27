@@ -37,13 +37,14 @@ public class Organization {
     @Column(name = "contact_email")
     private String contactEmail;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     protected Organization() {}
 
     public Organization(String name) {
         this.name = name;
+        this.createdAt = Instant.now();
     }
 
     public UUID getId() {

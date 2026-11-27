@@ -54,6 +54,9 @@ public class Route {
     @Column(name = "removal_reason", columnDefinition = "text")
     private String removalReason;
 
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
     protected Route() {}
 
     public Route(UUID wallId, String name, String grade, Instant setAt, String colour, UUID setterId,
@@ -66,6 +69,11 @@ public class Route {
         this.setterId = setterId;
         this.holdColour = holdColour;
         this.difficultyRating = difficultyRating;
+        this.createdAt = Instant.now();
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
     public UUID getId() {

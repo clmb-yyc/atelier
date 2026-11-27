@@ -44,6 +44,9 @@ public class UserPass {
     @Column(name = "revocation_reason", columnDefinition = "text")
     private String revocationReason;
 
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
     protected UserPass() {}
 
     public UserPass(UUID passId, UUID userId, Instant startsAt, Instant expiresAt, Instant purchasedAt,
@@ -54,6 +57,11 @@ public class UserPass {
         this.expiresAt = expiresAt;
         this.purchasedAt = purchasedAt;
         this.issuedBy = issuedBy;
+        this.createdAt = Instant.now();
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
     public UUID getId() {

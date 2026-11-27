@@ -6,17 +6,17 @@ Atelier stores gym operations and access records in PostgreSQL. IDs are UUIDs, t
 
 | Table | Non-nullable fields | Nullable fields |
 | --- | --- | --- |
-| `organizations` | `id` (PK), `name` | `archived_at`, `description`, `slug`, `logo_url`, `website_url`, `contact_email`, `created_at` |
-| `gyms` | `id` (PK), `organization_id`, `name`, `address`, `city`, `postal_code`, `country`, `latitude`, `longitude`, `timezone` | `archived_at`, `description`, `phone_number`, `email`, `capacity`, `created_at` |
-| `organization_admins` | `organization_id` and `user_id` (composite PK), `assigned_at` | `assigned_by` |
-| `gym_staff` | `gym_id` and `user_id` (composite PK), `assigned_at` | `assigned_by`, `job_title`, `employment_type` |
+| `organizations` | `id` (PK), `name`, `created_at` | `archived_at`, `description`, `slug`, `logo_url`, `website_url`, `contact_email` |
+| `gyms` | `id` (PK), `organization_id`, `name`, `address`, `city`, `postal_code`, `country`, `latitude`, `longitude`, `timezone`, `created_at` | `archived_at`, `description`, `phone_number`, `email`, `capacity` |
+| `organization_admins` | `organization_id` and `user_id` (composite PK), `assigned_at`, `created_at` | `assigned_by` |
+| `gym_staff` | `gym_id` and `user_id` (composite PK), `assigned_at`, `created_at` | `assigned_by`, `job_title`, `employment_type` |
 | `walls` | `id` (PK), `gym_id`, `name`, `discipline` (`BOULDER` or `ROPE`), `created_at` | `archived_at`, `description`, `height_m`, `angle_degrees`, `location` |
-| `routes` | `id` (PK), `wall_id`, `grade` (text), `colour`, `setter_id`, `hold_colour`, `difficulty_rating` (integer), `set_at` | `name`, `removed_at`, `description`, `style`, `image_url`, `removal_reason` |
+| `routes` | `id` (PK), `wall_id`, `grade` (text), `colour`, `setter_id`, `hold_colour`, `difficulty_rating` (integer), `set_at`, `created_at` | `name`, `removed_at`, `description`, `style`, `image_url`, `removal_reason` |
 | `passes` | `id` (PK), `organization_id`, `name`, `price`, `currency`, `is_renewable`, `created_at` | `gym_id`, `pass_type` (older passes), `valid_until`, `visit_limit` (integer), `archived_at`, `description`, `duration_days` |
-| `user_passes` | `id` (PK), `pass_id`, `user_id`, `starts_at`, `expires_at`, `purchased_at`, `issued_by` | `revoked_at`, `revoked_by`, `revocation_reason` |
-| `check_ins` | `id` (PK), `gym_id`, `user_pass_id`, `checked_in_at`, `checked_in_by` | `checked_out_at`, `voided_at` |
+| `user_passes` | `id` (PK), `pass_id`, `user_id`, `starts_at`, `expires_at`, `purchased_at`, `issued_by`, `created_at` | `revoked_at`, `revoked_by`, `revocation_reason` |
+| `check_ins` | `id` (PK), `gym_id`, `user_pass_id`, `checked_in_at`, `checked_in_by`, `created_at` | `checked_out_at`, `voided_at` |
 
-Atelier validates the PostgreSQL schema on startup. Create these columns before starting the API. For an existing database, backfill newly required fields before applying their `NOT NULL` constraints. The endpoint tables below list which fields the API currently accepts and returns.
+Atelier sets `created_at` automatically for new records. Atelier validates the PostgreSQL schema on startup. Create these columns before starting the API. For an existing database, backfill newly required fields before applying their `NOT NULL` constraints. The endpoint tables below list which fields the API currently accepts and returns.
 
 - An organization can operate multiple gyms. Organization admins manage all gyms in their organization. Staff assignments are scoped to a gym.
 - A route inherits its discipline from its wall and stores its own grade. Archiving a wall preserves its routes.
